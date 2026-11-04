@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="上海外滩 v2.0 · 完全程序化生成的 Three.js 3D 城市景观：黄浦江大尺度 U 形弯道环绕陆家嘴，东方明珠、上海中心、环球金融中心、金茂大厦与万国建筑博览群。"
+    />
+    <title>上海外滩 v2.0 · 黄浦江 U 形湾</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23070a10'/><circle cx='16' cy='11' r='4.2' fill='%23e8c48a'/><rect x='14.6' y='13' width='2.8' height='15' fill='%23e8c48a'/><circle cx='16' cy='22' r='2.4' fill='%23e8c48a'/></svg>"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene"></canvas>
+
+      <div class="ui" id="ui">
+        <header class="masthead">
+          <div class="brand">
+            <span class="brand-en">THE&nbsp;BUND</span>
+            <span class="brand-cn">上海外滩</span>
+          </div>
+          <p class="tagline">黄浦江 U 形湾 · 陆家嘴天际线</p>
+        </header>
+
+        <aside class="landmarks" aria-label="地标导航">
+          <p class="panel-title">地标 · Landmarks</p>
+          <button class="landmark" data-landmark="pearl">
+            <span class="dot" style="--dot: #ff5c9e"></span>东方明珠
+          </button>
+          <button class="landmark" data-landmark="shanghai-tower">
+            <span class="dot" style="--dot: #7fd8ff"></span>上海中心
+          </button>
+          <button class="landmark" data-landmark="swfc">
+            <span class="dot" style="--dot: #9fb7ff"></span>环球金融中心
+          </button>
+          <button class="landmark" data-landmark="jinmao">
+            <span class="dot" style="--dot: #ffd28a"></span>金茂大厦
+          </button>
+          <button class="landmark" data-landmark="bund">
+            <span class="dot" style="--dot: #ffe9c4"></span>外滩建筑群
+          </button>
+          <button class="landmark" data-landmark="overview">
+            <span class="dot" style="--dot: #ffffff"></span>全景视角
+          </button>
+        </aside>
+
+        <div class="toolbar">
+          <div class="segmented" role="group" aria-label="时间状态">
+            <button class="seg" data-time="day" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4.2" />
+                <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6" />
+              </svg>
+              白天
+            </button>
+            <button class="seg" data-time="dusk" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 17h18M6.5 17a5.5 5.5 0 0 1 11 0" />
+                <path d="M12 4.5v3M4.6 8.1l1.6 1.6M19.4 8.1l-1.6 1.6M2.5 13h2M19.5 13h2" />
+              </svg>
+              黄昏
+            </button>
+            <button class="seg" data-time="night" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.4 8.4 0 1 0 10.6 10.6Z" />
+              </svg>
+              夜景
+            </button>
+          </div>
+
+          <div class="actions">
+            <button class="action" id="orbit-toggle" aria-pressed="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse cx="12" cy="12" rx="9" ry="4.4" />
+                <circle cx="12" cy="12" r="2.2" class="fill" />
+                <path d="M18.5 7.2l.8-2.5 2.3 1.2" />
+              </svg>
+              自动环绕
+            </button>
+            <button class="action" id="reset-view">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5" />
+              </svg>
+              重置视角
+            </button>
+          </div>
+        </div>
+
+        <p class="hint">左键拖拽旋转 · 滚轮缩放 · 右键平移 · 点击地标聚焦</p>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="loading-mark">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <p class="loading-title">上海外滩</p>
+        <p class="loading-sub">正在生成黄浦江 U 形湾</p>
+        <div class="loading-bar"><i id="loading-progress"></i></div>
+      </div>
+
+      <div class="fallback" id="fallback" hidden>
+        <p>当前浏览器无法启动 WebGL 2。</p>
+        <p>请使用最新版 Chrome、Edge、Firefox 或 Safari 桌面浏览器打开。</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "shanghai-bund-3d-v2",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "上海外滩 · 可交互 Three.js 3D 城市景观",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  }
+}
