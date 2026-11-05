@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="上海外滩 v3.0 · 基于真实 OSM 地理数据、3D-GloBFP 高度与 Copernicus DEM 的 Three.js 1:1 城市景观。"
+    />
+    <title>上海外滩 v3.0</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23070a10'/><circle cx='16' cy='11' r='4.2' fill='%23e8c48a'/><rect x='14.6' y='13' width='2.8' height='15' fill='%23e8c48a'/><circle cx='16' cy='22' r='2.4' fill='%23e8c48a'/></svg>"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #070a10;
+        color: #e8eef7;
+        font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      }
+
+      #scene {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #loading {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #070a10;
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        color: #8fa3bd;
+        transition: opacity 0.35s ease;
+        z-index: 2;
+      }
+
+      #loading[data-hidden="true"] {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #ui {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene" aria-label="上海外滩三维场景"></canvas>
+    <div id="loading" role="status">初始化场景…</div>
+    <div id="ui"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
