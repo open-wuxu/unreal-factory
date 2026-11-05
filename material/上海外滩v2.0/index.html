@@ -25,6 +25,14 @@
             <span class="brand-cn">上海外滩</span>
           </div>
           <p class="tagline">黄浦江 U 形湾 · 陆家嘴天际线</p>
+          <a class="film-link" href="?film=1" aria-label="观看 28 秒影片">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2" />
+              <path d="M10 8.6l6 3.4-6 3.4z" class="fill" />
+            </svg>
+            <span>观看影片</span>
+            <span class="film-link-time">28 s</span>
+          </a>
         </header>
 
         <aside class="landmarks" aria-label="地标导航">
@@ -92,6 +100,63 @@
         </div>
 
         <p class="hint">左键拖拽旋转 · 滚轮缩放 · 右键平移 · 点击地标聚焦</p>
+      </div>
+
+      <div class="film" id="film" hidden aria-hidden="true">
+        <div class="film-vignette"></div>
+        <div class="film-scrim"></div>
+
+        <div class="film-title" data-film="title">
+          <p class="film-kicker">SHANGHAI · THE BUND</p>
+          <h1 class="film-h1">上海外滩</h1>
+          <p class="film-sub">
+            黄浦江 U 形湾<span>·</span>陆家嘴天际线
+          </p>
+          <span class="film-rule"></span>
+        </div>
+
+        <div class="film-caption" data-film="bund">
+          <p class="film-kicker">THE BUND · HISTORIC WATERFRONT</p>
+          <p class="film-cn">外滩建筑群</p>
+          <p class="film-note">沿黄浦江西岸连续展开，立面逐栋朝向江面</p>
+        </div>
+
+        <div class="film-data" data-film="data">
+          <p class="film-kicker">LUJIAZUI · SKYLINE</p>
+          <div class="film-metrics">
+            <div class="metric" data-metric>
+              <span class="metric-name">上海中心</span>
+              <span class="metric-value">632<em>m</em></span>
+            </div>
+            <div class="metric" data-metric>
+              <span class="metric-name">环球金融中心</span>
+              <span class="metric-value">492<em>m</em></span>
+            </div>
+            <div class="metric" data-metric>
+              <span class="metric-name">东方明珠</span>
+              <span class="metric-value">468<em>m</em></span>
+            </div>
+            <div class="metric" data-metric>
+              <span class="metric-name">金茂大厦</span>
+              <span class="metric-value">420.5<em>m</em></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="film-caption film-caption--night" data-film="night">
+          <p class="film-kicker">NIGHTFALL · LUJIAZUI</p>
+          <p class="film-cn">华灯初上</p>
+          <p class="film-note">暮色沉入江面，城市灯火亮起</p>
+        </div>
+
+        <div class="film-end" data-film="end">
+          <p class="film-kicker">A PROCEDURAL CITY STUDY</p>
+          <h2 class="film-h2">上海外滩</h2>
+          <p class="film-sub">THE BUND<span>·</span>黄浦江 U 形湾</p>
+          <p class="film-credit">全部几何与贴图由代码生成 · Three.js</p>
+        </div>
+
+        <div class="film-fade" data-film="fade"></div>
       </div>
 
       <div class="loading" id="loading">

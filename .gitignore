@@ -33,6 +33,14 @@ pnpm-debug.log*
 *.temp
 .cache/
 
+# ---------- 生成的影片交付物（成片 / 配乐 / 预览 / 帧序列） ----------
+deliverables/
+
+# ---------- Python（配乐与预览脚本） ----------
+__pycache__/
+*.py[cod]
+.venv/
+
 # ---------- 本机 skills 配置（不入库） ----------
 .claude/
 .agents/

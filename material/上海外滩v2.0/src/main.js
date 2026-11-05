@@ -1,3 +1,5 @@
+import "./deterministic.js";
+
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -8,6 +10,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { DEFAULT_PRESET, LANDMARK_VIEWS } from "./config.js";
 import { createWorld } from "./world/index.js";
 import { createTimeSystem } from "./world/time.js";
+import { createFilm, FILM_DURATION, FILM_FPS } from "./film.js";
 import {
   createUI,
   hideLoading,
@@ -217,38 +220,91 @@ async function bootstrap() {
     if (!flight.active) ui.setLandmark(null);
   });
 
+  /* 影片模式 -------------------------------------------------------- */
+
+  const params = new URLSearchParams(window.location.search);
+  const filmMode = params.has("film");
+  const captureMode = params.has("capture");
+
+  let film = null;
+
+  if (filmMode) {
+    document.body.classList.add("is-film");
+    const uiRoot = document.getElementById("ui");
+    if (uiRoot) uiRoot.style.display = "none";
+    const filmRoot = document.getElementById("film");
+    if (filmRoot) filmRoot.hidden = false;
+
+    controls.enabled = false;
+    controls.autoRotate = false;
+
+    await document.fonts.ready;
+
+    film = createFilm({ camera, controls, scene, time, world, composer });
+    time.setImmediate("dusk");
+    film.renderFrame(0);
+
+    // 影片模式直接撤掉加载层，避免 1 秒淡出压住开场标题。
+    const loading = document.getElementById("loading");
+    if (loading) loading.style.display = "none";
+
+    if (captureMode) {
+      window.__capture = {
+        ready: true,
+        duration: FILM_DURATION,
+        fps: FILM_FPS,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        renderAt: (value) => film.renderFrame(value),
+        reset: () => film.reset(),
+      };
+    }
+  }
+
   /* 主循环 ---------------------------------------------------------- */
 
   const timer = new THREE.Timer();
   timer.connect(document);
 
-  let firstFrame = true;
+  if (filmMode) {
+    if (!captureMode) {
+      renderer.setAnimationLoop(() => {
+        timer.update();
+        const delta = Math.min(timer.getDelta(), 0.05);
+        film.update(delta);
+      });
+    } else {
+      renderer.setAnimationLoop(null);
+    }
+  } else {
+    let firstFrame = true;
 
-  function animate() {
-    timer.update();
-    const delta = Math.min(timer.getDelta(), 0.05);
-    const elapsed = timer.getElapsed();
+    function animate() {
+      timer.update();
+      const delta = Math.min(timer.getDelta(), 0.05);
+      const elapsed = timer.getElapsed();
 
-    time.update(delta);
+      time.update(delta);
 
-    if (flight.active) {
-      updateFlight(delta);
-    } else if (!flight.active) {
-      controls.update(delta);
+      if (flight.active) {
+        updateFlight(delta);
+      } else if (!flight.active) {
+        controls.update(delta);
+      }
+
+      world.update(delta, elapsed, time.state);
+      composer.render();
+
+      if (firstFrame) {
+        firstFrame = false;
+        hideLoading();
+        // 开场飞行：从远处推近到全景。
+        flyTo(LANDMARK_VIEWS.overview, 2.8, true);
+      }
     }
 
-    world.update(delta, elapsed, time.state);
-    composer.render();
-
-    if (firstFrame) {
-      firstFrame = false;
-      hideLoading();
-      // 开场飞行：从远处推近到全景。
-      flyTo(LANDMARK_VIEWS.overview, 2.8, true);
-    }
+    renderer.setAnimationLoop(animate);
   }
-
-  renderer.setAnimationLoop(animate);
 
   /* 尺寸 ------------------------------------------------------------ */
 
@@ -273,6 +329,9 @@ async function bootstrap() {
     composer,
     world,
     time,
+    film,
+    filmMode,
+    captureMode,
     flyTo,
     flight,
     setView(position, target) {

@@ -54,6 +54,34 @@ npm run preview
 
 构建产物在 `dist/`，使用相对路径，可部署到任意静态服务器或子目录。
 
+## 影片模式与视频导出
+
+页面左上角点击「观看影片」，或直接打开 `?film=1`，会播放 28 秒的固定镜头版本：
+四个镜头从 U 形江湾俯冲进入外滩立面，再环绕陆家嘴四塔，在镜头内完成黄昏到夜景的
+过渡，最后回到外滩夜色。影片模式隐藏交互 UI，使用同一套配色与字体，播放结束后
+淡出循环。
+
+逐帧导出 2K / 60fps MP4 需要本机 Chrome 与 ffmpeg：
+
+```bash
+npm run dev -- --port 5188 --strictPort
+# 另开终端
+npm run export:film -- --frames deliverables/frames --fps 60 --duration 28
+npm run encode:film -- --frames deliverables/frames \
+  --out deliverables/shanghai-bund-v2-2k60-silent.mp4
+npm run stills:film -- --out deliverables/previews
+```
+
+配乐版：`deliverables/shanghai-bund-v2-score.wav` 是由 `scripts/compose-score.py`
+用 numpy / scipy 合成的原创配乐（无采样、无外部音乐素材），再以 AAC 320 kbps
+封装进视频；视频流直接 copy，不重编码。完整母带与封装命令见
+`deliverables/REPORT.md` 第 6 节。网页 `?film=1` 是静音预览，MP4 成片带配乐。
+
+`?capture=1` 会关闭实时循环，以固定 1/60 秒步长推进时间线，并用固定 seed 覆盖
+`Math.random`；相机、昼夜、文字全部由绝对时间推导，因此每次导出的帧序列一致。
+镜头表、切点和字幕时间在 `src/film.js`，文案与版式在 `index.html` 与 `src/style.css`
+的 `.film-*` 规则中。
+
 ## 交互方式
 
 | 操作 | 效果 |

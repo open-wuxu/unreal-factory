@@ -2,3 +2,11 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# 影片导出产物（视频 / 配乐 / 预览 / 帧序列）
+deliverables/
+
+# Python 配乐脚本缓存
+__pycache__/
+*.py[cod]
+.venv/

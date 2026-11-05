@@ -150,6 +150,30 @@ export function createTimeSystem({
     if (progress >= 1) current = target;
   }
 
+  /**
+   * 直接落到某个预设，不播放过渡。
+   * 影片捕获与循环重播需要可重复的初始昼夜状态。
+   */
+  function setImmediate(name) {
+    if (!TIME_PRESETS[name]) return;
+
+    const next = createState(TIME_PRESETS[name]);
+    for (const key of NUMERIC_KEYS) state[key] = next[key];
+    for (const key of COLOR_KEYS) state[key].copy(next[key]);
+    state.sunDirection.copy(next.sunDirection);
+
+    fromState = cloneState(next);
+    toState = cloneState(next);
+    progress = 1;
+    current = name;
+    target = name;
+
+    scene.environment = environments[name];
+    apply(state);
+    if (sunLight.shadow) sunLight.shadow.needsUpdate = true;
+    onChange?.(name);
+  }
+
   // 初始状态
   apply(state);
   if (sunLight.shadow) sunLight.shadow.needsUpdate = true;
@@ -166,6 +190,7 @@ export function createTimeSystem({
       return progress < 1;
     },
     setPreset,
+    setImmediate,
     update,
   };
 }

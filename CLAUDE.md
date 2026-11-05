@@ -117,6 +117,24 @@ composer.render();
 `window.__bund` 暴露了 `renderer / scene / camera / controls / composer / world / time / flyTo / flight`
 以及 `setView(position, target)`，调试和性能检查时可在控制台直接使用。
 
+### 影片模式与逐帧导出
+
+`material/上海外滩v2.0/src/film.js` 定义 28 秒、60fps 的固定镜头时间线（4 个镜头），
+相机、昼夜与字幕均由绝对时间 `t` 推导。`?film=1` 隐藏交互 UI 并实时播放；
+`?capture=1` 关闭实时循环，由 `window.__capture.renderAt(t)` 以固定 1/60 秒步长推进；
+`src/deterministic.js` 在捕获模式下用固定 seed 覆盖 `Math.random`。影片字幕在
+`index.html` 的 `#film` 与 `src/style.css` 的 `.film-*` 中。
+
+导出流程：在 v2.0 目录执行 `npm run dev -- --port 5188 --strictPort`，另开终端执行
+`npm run export:film -- --frames deliverables/frames`、
+`npm run encode:film -- --frames deliverables/frames --out deliverables/shanghai-bund-v2-2k60.mp4`、
+`npm run stills:film -- --out deliverables/previews`。改动镜头时间、机位或文案后
+必须重新导出，不能只替换视频文件。
+
+成片配乐由 `scripts/compose-score.py` 用 numpy / scipy 程序化合成，无外部采样；
+母带与封装命令见 `deliverables/REPORT.md`。`deliverables/shanghai-bund-v2-2k60.mp4`
+是带 AAC 音轨的主交付，`...-silent.mp4` 是无声备份；网页 `?film=1` 仍为静音预览。
+
 ## 版本关系
 
 v1.0 与 v2.0 完全独立，各自带 `package.json`、`vite.config.js` 和 `.gitignore`。
