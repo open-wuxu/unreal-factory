@@ -24,6 +24,7 @@ const grassColor = new THREE.Color(COLORS.grass);
 const bambooColor = new THREE.Color(COLORS.bamboo);
 const autumnColor = new THREE.Color(COLORS.autumn);
 const highRockColor = new THREE.Color(0x837d70);
+const courtyardColor = new THREE.Color(COLORS.path);
 const scratchColor = new THREE.Color();
 const scratchPalette = new THREE.Color();
 
@@ -56,6 +57,13 @@ function colorFor(x, z, height, normalY, peak, distance) {
 
   if (height > 1330) {
     base.lerp(rockColor, smoothstep(1330, 1700, height) * 0.7);
+  }
+
+  // 峰顶台地是铺石广场，而不是草地。
+  const courtyard =
+    1 - smoothstep(peak.plateau * 0.92, peak.plateau * 1.22, distance);
+  if (courtyard > 0) {
+    base.lerp(courtyardColor, courtyard * 0.82);
   }
 
   const rockWeight = smoothstep(0.34, 0.72, slope);

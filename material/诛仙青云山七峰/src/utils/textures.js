@@ -258,6 +258,63 @@ export function createPlaqueTexture(text) {
   );
 }
 
+/** 竹叶：透明底上的一簇细长叶片，用于交叉卡片。 */
+export function createBambooLeafTexture() {
+  return canvasTexture(
+    "bamboo-leaf",
+    256,
+    (context, size) => {
+      context.clearRect(0, 0, size, size);
+      const random = seededRandom(3311);
+      for (let i = 0; i < 120; i++) {
+        const x = random() * size;
+        const y = random() * size;
+        const length = 30 + random() * 54;
+        const angle = random() * Math.PI * 2;
+        context.save();
+        context.translate(x, y);
+        context.rotate(angle);
+        const gradient = context.createLinearGradient(0, 0, length, 0);
+        gradient.addColorStop(0, "rgba(118,152,64,0)");
+        gradient.addColorStop(0.35, "rgba(138,176,78,0.98)");
+        gradient.addColorStop(1, "rgba(74,108,44,0.95)");
+        context.fillStyle = gradient;
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.quadraticCurveTo(length * 0.5, -5.5, length, 0);
+        context.quadraticCurveTo(length * 0.5, 5.5, 0, 0);
+        context.fill();
+        context.restore();
+      }
+    },
+    { srgb: true },
+  );
+}
+
+/** 草叶：透明底上的几根细草。 */
+export function createGrassBladeTexture() {
+  return canvasTexture(
+    "grass-blade",
+    128,
+    (context, size) => {
+      context.clearRect(0, 0, size, size);
+      const random = seededRandom(9199);
+      for (let i = 0; i < 16; i++) {
+        const x = 8 + random() * (size - 16);
+        const height = 40 + random() * 70;
+        const bend = (random() - 0.5) * 22;
+        context.strokeStyle = i % 3 === 0 ? "#7d8f45" : "#5f7838";
+        context.lineWidth = 1.6 + random() * 1.6;
+        context.beginPath();
+        context.moveTo(x, size);
+        context.quadraticCurveTo(x + bend * 0.5, size - height * 0.6, x + bend, size - height);
+        context.stroke();
+      }
+    },
+    { srgb: true },
+  );
+}
+
 /**
  * 可平铺的三维云噪声体纹理（64³, R8）。
  * 作为体积云 Ray Marching 的密度场，线性过滤 + 三轴 Repeat。

@@ -2,6 +2,7 @@ import { createClouds } from "./clouds.js";
 import { createPeaks } from "./peaks.js";
 import { createSky } from "./sky.js";
 import { createTerrain } from "./terrain.js";
+import { createVegetation } from "./vegetation.js";
 
 /**
  * 场景装配入口。后续任务会把云海、建筑、植被等模块加进来，
@@ -11,12 +12,14 @@ export function createWorld(scene, camera, renderer) {
   const sky = createSky(scene, renderer);
   const terrain = createTerrain(scene);
   const peaks = createPeaks(scene);
+  const vegetation = createVegetation(scene);
   const clouds = createClouds({ renderer, camera });
 
   function update(delta, elapsed, state) {
     void elapsed;
     sky.update(delta, state);
     peaks.update(delta, state);
+    vegetation.update(delta, state);
     clouds.update(delta, {
       time: state && state.time !== undefined ? state.time : undefined,
       sunDirection: sky.sunDirection,
@@ -34,6 +37,7 @@ export function createWorld(scene, camera, renderer) {
     terrain,
     peaks,
     complexes: peaks.complexes,
+    vegetation,
     sky,
     clouds,
     sunLight: sky.sunLight,
