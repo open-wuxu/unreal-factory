@@ -345,6 +345,10 @@ body.subtitles-off .film__title {
   display: none;
 }
 
+body.capture-mode .film__sound {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .hud {
     padding: 16px 18px;

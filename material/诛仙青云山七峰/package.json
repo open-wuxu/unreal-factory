@@ -9,7 +9,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node scripts/test-core.mjs && node scripts/test-buildings.mjs && node scripts/test-vegetation.mjs && node scripts/test-water.mjs && node scripts/test-film.mjs",
-    "test:interactions": "node scripts/test-interactions.mjs"
+    "test:interactions": "node scripts/test-interactions.mjs",
+    "verify:scene": "node scripts/verify-scene.mjs",
+    "export:film": "node scripts/export-film.mjs",
+    "encode:film": "node scripts/encode-film.mjs",
+    "stills:film": "node scripts/capture-stills.mjs"
   },
   "dependencies": {
     "three": "0.186.0"
