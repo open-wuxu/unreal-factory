@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { fbm2, ridged2, seededRandom } from "./noise.js";
+import { fbm2, fbm3Tileable, ridged2, seededRandom } from "./noise.js";
 
 /**
  * 程序化 Canvas 贴图。所有贴图都在浏览器内生成，不引用外部图片。
@@ -89,6 +89,40 @@ export function createGroundTexture() {
       return 0.5 + broad * 0.36 + (patch - 0.5) * 0.18;
     });
   });
+}
+
+/**
+ * 可平铺的三维云噪声体纹理（64³, R8）。
+ * 作为体积云 Ray Marching 的密度场，线性过滤 + 三轴 Repeat。
+ */
+export function createCloudNoise3D(size = 64, seed = 1234) {
+  const key = `cloud-3d-${size}-${seed}`;
+  if (cache.has(key)) return cache.get(key);
+  const data = new Uint8Array(size * size * size);
+  let index = 0;
+  for (let z = 0; z < size; z++) {
+    const w = (z + 0.5) / size;
+    for (let y = 0; y < size; y++) {
+      const v = (y + 0.5) / size;
+      for (let x = 0; x < size; x++) {
+        const u = (x + 0.5) / size;
+        const n = fbm3Tileable(u, v, w, 5, seed, 8) * 0.5 + 0.5;
+        data[index++] = Math.round(Math.min(1, Math.max(0, n)) * 255);
+      }
+    }
+  }
+  const texture = new THREE.Data3DTexture(data, size, size, size);
+  texture.format = THREE.RedFormat;
+  texture.type = THREE.UnsignedByteType;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.wrapR = THREE.RepeatWrapping;
+  texture.unpackAlignment = 1;
+  texture.needsUpdate = true;
+  cache.set(key, texture);
+  return texture;
 }
 
 export function disposeTextureCache() {

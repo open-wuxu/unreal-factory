@@ -212,7 +212,7 @@ export const CAMERA_VIEWS = {
 };
 
 export const ATMOSPHERE = {
-  fogDensity: 0.000055,
+  fogDensity: 0.000038,
   bloomStrength: 0.32,
   bloomRadius: 0.7,
   bloomThreshold: 0.72,

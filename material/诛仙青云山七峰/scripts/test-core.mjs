@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { PEAKS, SUN_KEYS, WORLD, sunDirectionAt } from "../src/config.js";
 import { heightAt, normalAt, peakHeightAt } from "../src/world/shape.js";
-import { seededRandom, fbm2 } from "../src/utils/noise.js";
+import { seededRandom, fbm2, valueNoise3 } from "../src/utils/noise.js";
 
 for (const p of PEAKS) {
   assert.ok(Math.abs(peakHeightAt(p.id) - p.height) < 2, `${p.id} summit`);
@@ -44,5 +44,13 @@ assert.ok(Math.abs(sunStart.length() - 1) < 1e-3, "sun start unit");
 assert.ok(Math.abs(sunEnd.length() - 1) < 1e-3, "sun end unit");
 assert.ok(sunEnd.y < sunStart.y, "sun sets over the film");
 assert.ok(sunStart.x < 0, "sun in the west");
+
+// 三维云噪声必须可平铺，避免云层出现接缝。
+const cloudSample = valueNoise3(0.31, 0.47, 0.12, 5, 8);
+assert.ok(
+  Math.abs(cloudSample - valueNoise3(8.31, 0.47, 0.12, 5, 8)) < 1e-6,
+  "cloud noise must tile",
+);
+assert.ok(cloudSample >= 0 && cloudSample <= 1);
 
 console.log("core ok");
