@@ -4,6 +4,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 import { ATMOSPHERE, CAMERA_VIEWS } from "./config.js";
+import { createWorld } from "./world/index.js";
+import { heightAt } from "./world/shape.js";
 
 function supportsWebGL2() {
   try {
@@ -64,12 +66,30 @@ function bootstrap() {
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.update();
 
+  const world = createWorld(scene, camera, renderer);
+
+  const params = new URLSearchParams(window.location.search);
+  const viewName = params.get("view");
+  if (viewName === "ground") {
+    const x = -1100;
+    const z = 1400;
+    camera.position.set(x, heightAt(x, z) + 6, z);
+    controls.target.set(0, 1520, 0);
+    controls.update();
+  } else if (CAMERA_VIEWS[viewName]) {
+    camera.position.fromArray(CAMERA_VIEWS[viewName].position);
+    controls.target.fromArray(CAMERA_VIEWS[viewName].target);
+    controls.update();
+  }
+
   const clock = new THREE.Clock();
   let firstFrame = true;
 
   function animate() {
     const delta = Math.min(clock.getDelta(), 0.05);
+    const elapsed = clock.elapsedTime;
     controls.update(delta);
+    world.update(delta, elapsed, { time: 0 });
     renderer.render(scene, camera);
 
     if (firstFrame) {
@@ -93,6 +113,7 @@ function bootstrap() {
     scene,
     camera,
     controls,
+    world,
   };
 }
 

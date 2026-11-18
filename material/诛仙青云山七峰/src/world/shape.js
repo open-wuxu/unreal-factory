@@ -5,25 +5,33 @@ import { clamp, fbm2, mix, ridged2, smoothstep } from "../utils/noise.js";
 /**
  * 地形唯一真值：解析高度函数 heightAt(x, z)。
  *
- * 每座峰由「各向异性径向轮廓 + 脊线噪声 + 山脚裙坡」构成，
- * 峰之间取平滑最大值，避免简单相加把峰顶抬高；峰顶压平成建筑台地。
+ * 每座峰由「域扭曲 + 角度脊线 + 悬崖带 + 卫星山脊 + 冲沟」构成。
+ * 峰之间取平滑最大值，避免相加抬高；峰顶压平成建筑台地。
  */
 
-const PEAK_DATA = PEAKS.map((peak) => ({
-  ...peak,
-  cos: Math.cos(peak.rotation),
-  sin: Math.sin(peak.rotation),
-  amplitude: peak.height - WORLD.valleyBase,
-}));
-
-/** 远离核心区的五条远山脊，让地平线不空。 */
-const FAR_RIDGES = [
-  { angle: 0.35, distance: 12300, width: 2400, height: 820, span: 0.85 },
-  { angle: 1.75, distance: 14200, width: 3000, height: 1050, span: 1.0 },
-  { angle: 2.9, distance: 11800, width: 2200, height: 760, span: 0.75 },
-  { angle: 4.15, distance: 13600, width: 2800, height: 980, span: 0.95 },
-  { angle: 5.3, distance: 12800, width: 2500, height: 700, span: 0.8 },
-];
+const PEAK_DATA = PEAKS.map((peak, index) => {
+  const spurs = [];
+  for (let i = 0; i < 3; i++) {
+    const angle = peak.rotation + i * 2.35 + (peak.seed % 7) * 0.24;
+    const distance = peak.radius * (0.42 + i * 0.11);
+    spurs.push({
+      x: peak.x + Math.cos(angle) * distance,
+      z: peak.z + Math.sin(angle) * distance,
+      height: peak.height - WORLD.valleyBase,
+      amplitude: 0.26 + 0.04 * i,
+      spread: peak.radius * (0.4 - 0.04 * i),
+      seed: peak.seed + 17 * (i + 1),
+    });
+  }
+  return {
+    ...peak,
+    index,
+    cos: Math.cos(peak.rotation),
+    sin: Math.sin(peak.rotation),
+    amplitude: peak.height - WORLD.valleyBase,
+    spurs,
+  };
+});
 
 function peakLocal(peak, x, z) {
   const dx = x - peak.x;
@@ -34,44 +42,66 @@ function peakLocal(peak, x, z) {
 }
 
 function peakBody(peak, x, z) {
-  const { d, angle } = peakLocal(peak, x, z);
+  // 域扭曲：让山脊与沟壑自然弯曲，而不是笔直的圆锥母线。
+  const warpX = x + 190 * fbm2(x * 0.0011, z * 0.0011, 3, peak.seed + 1);
+  const warpZ = z + 190 * fbm2(x * 0.0011 + 5.2, z * 0.0011 - 3.7, 4, peak.seed + 2);
+
+  const { d, angle } = peakLocal(peak, warpX, warpZ);
   const ridge = ridged2(
-    Math.cos(angle) * 2.2 + peak.seed * 0.37,
-    Math.sin(angle) * 2.2 - peak.seed * 0.21,
-    3,
+    Math.cos(angle) * 1.45 + peak.seed * 0.37,
+    Math.sin(angle) * 1.45 - peak.seed * 0.21,
+    2,
     peak.seed,
   );
-  const radius = peak.radius * (0.8 + 0.34 * ridge);
+  const radius = peak.radius * (0.85 + 0.24 * ridge);
   const t = clamp(1 - d / radius, 0, 1);
-  const asym = 1 + 0.12 * Math.sin(angle * 3 + peak.seed);
-  const core = peak.amplitude * Math.pow(t, 2.2) * asym;
-  const skirt =
-    220 *
-    Math.exp(-Math.pow(d / (peak.radius * 2.2), 2)) *
-    (0.9 + 0.2 * Math.sin(angle * 2 + peak.seed));
-  return { body: core + skirt, d };
-}
 
-function farRidgeHeight(x, z) {
-  const radial = Math.hypot(x, z);
-  if (radial < 6000) return -Infinity;
-  const theta = Math.atan2(z, x);
-  let best = -Infinity;
-  for (const ridge of FAR_RIDGES) {
-    let delta = Math.abs(theta - ridge.angle);
-    if (delta > Math.PI) delta = Math.PI * 2 - delta;
-    const angular = Math.exp(-Math.pow(delta / ridge.span, 2) * 2.2);
-    const radialTerm = Math.exp(
-      -Math.pow((radial - ridge.distance) / ridge.width, 2),
-    );
-    best = Math.max(best, ridge.height * angular * radialTerm);
+  // 宽大山脚：必须在峰体轮廓之外继续连续衰减，否则会在山脚
+  // 留下一圈垂直断崖（表现为放射状竖条纹）。
+  const skirt = 190 * Math.exp(-Math.pow(d / (peak.radius * 2.4), 2));
+  if (t <= 0) return { body: skirt, d };
+
+  // 径向剖面：缓坡山脚 + 中段陡崖带 + 峰顶收束。
+  const profile =
+    0.6 * Math.pow(t, 1.4) + 0.4 * smoothstep(0.5, 0.84, t);
+  const asym = 1 + 0.08 * Math.sin(angle * 3 + peak.seed);
+  let body = peak.amplitude * profile * asym;
+
+  // 大尺度山脊场：让山体长出分叉的脊与谷，而不是放射状褶皱。
+  const macro = 0.8 + 0.32 * ridged2(
+    x * 0.00105 + peak.seed * 13.7,
+    z * 0.00105 - peak.seed * 7.3,
+    4,
+    peak.seed + 3,
+  );
+  body *= macro;
+
+  // 冲沟：中段最强，峰顶与山脚减弱。
+  const gullies = ridged2(x * 0.0026, z * 0.0026, 4, peak.seed + 5);
+  body -= peak.amplitude * 0.07 * gullies * t * (1 - t) * 4;
+
+  // 卫星山脊：每座峰带三条较低的山腿。
+  for (const spur of peak.spurs) {
+    const sd = Math.hypot(x - spur.x, z - spur.z);
+    if (sd < spur.spread * 2.4) {
+      const falloff = Math.exp(-Math.pow(sd / spur.spread, 2));
+      const rough = 0.74 + 0.26 * ridged2(x * 0.003, z * 0.003, 3, spur.seed);
+      body = Math.max(
+        body,
+        spur.height * spur.amplitude * falloff * rough,
+      );
+    }
   }
-  return best <= 0 ? -Infinity : WORLD.valleyBase + best;
+
+  body += skirt;
+  return { body: Math.max(0, body), d };
 }
 
 export function heightAt(x, z) {
   const base =
-    WORLD.valleyBase + 60 * fbm2(x * 0.00016, z * 0.00016, 4, 3);
+    WORLD.valleyBase +
+    70 * fbm2(x * 0.00016, z * 0.00016, 4, 3) +
+    235 * ridged2(x * 0.0008, z * 0.0008, 4, 29);
 
   let peakMax = 0;
   let sum = 0;
@@ -89,29 +119,42 @@ export function heightAt(x, z) {
     }
   }
 
-  let height = base + peakMax + 0.12 * Math.max(0, sum - peakMax);
+  let height = base + peakMax + 0.08 * Math.max(0, sum - peakMax);
 
+  const nearestDistance = nearestScore * nearest.plateau;
   const detailWeight = smoothstep(
-    nearest.plateau * 0.5,
-    nearest.plateau * 2.2,
-    nearestScore * nearest.plateau,
+    nearest.plateau * 0.6,
+    nearest.plateau * 2.4,
+    nearestDistance,
   );
   if (detailWeight > 0) {
-    height += 24 * fbm2(x * 0.004, z * 0.004, 4, nearest.seed) * detailWeight;
+    height += 34 * fbm2(x * 0.0035, z * 0.0035, 4, nearest.seed) * detailWeight;
     height -=
-      14 *
-      Math.pow(ridged2(x * 0.0018, z * 0.0018, 4, nearest.seed + 5), 2) *
+      22 *
+      Math.pow(ridged2(x * 0.0015, z * 0.0015, 4, nearest.seed + 9), 2) *
       detailWeight;
+
+    // 中尺度岩脊与碎石：让山体表面出现岩石质感，而不是光滑的沙丘。
+    const rocky = detailWeight * smoothstep(860, 1260, height);
+    if (rocky > 0) {
+      height += 26 * fbm2(x * 0.009, z * 0.009, 3, nearest.seed + 21) * rocky;
+      height +=
+        16 *
+        (ridged2(x * 0.0058, z * 0.0058, 3, nearest.seed + 27) - 0.5) *
+        rocky;
+    }
   }
 
   const plateauWeight =
-    1 - smoothstep(nearest.plateau, nearest.plateau * 1.6, nearestScore * nearest.plateau);
+    1 -
+    smoothstep(
+      nearest.plateau,
+      nearest.plateau * 1.6,
+      nearestDistance,
+    );
   if (plateauWeight > 0) {
     height = mix(height, nearest.height, plateauWeight);
   }
-
-  const far = farRidgeHeight(x, z);
-  if (far > height) height = far;
 
   return height;
 }

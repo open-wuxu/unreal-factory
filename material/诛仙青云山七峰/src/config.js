@@ -147,8 +147,8 @@ export const PEAKS = [
 export const SUN_KEYS = [
   {
     t: 0,
-    elevation: 14,
-    azimuth: 315,
+    elevation: 22,
+    azimuth: 245,
     color: 0xffd2a1,
     intensity: 3.2,
     skyTop: 0x3f6ea8,
@@ -160,8 +160,8 @@ export const SUN_KEYS = [
   },
   {
     t: 12,
-    elevation: 11,
-    azimuth: 320,
+    elevation: 18,
+    azimuth: 252,
     color: 0xffc489,
     intensity: 3.0,
     skyTop: 0x38639b,
@@ -173,8 +173,8 @@ export const SUN_KEYS = [
   },
   {
     t: 24,
-    elevation: 8,
-    azimuth: 326,
+    elevation: 13,
+    azimuth: 260,
     color: 0xffab6a,
     intensity: 2.7,
     skyTop: 0x30568c,
@@ -186,8 +186,8 @@ export const SUN_KEYS = [
   },
   {
     t: 36,
-    elevation: 4,
-    azimuth: 332,
+    elevation: 7,
+    azimuth: 268,
     color: 0xff8a52,
     intensity: 2.4,
     skyTop: 0x284a7b,
@@ -201,7 +201,7 @@ export const SUN_KEYS = [
 
 /** 导航机位。 */
 export const CAMERA_VIEWS = {
-  overview: { position: [6200, 2600, 7600], target: [0, 950, 0] },
+  overview: { position: [4300, 2150, 5200], target: [0, 1000, 0] },
   tongtian: { position: [900, 1980, 1200], target: [0, 1790, 0] },
   longshou: { position: [-300, 1800, -1900], target: [-200, 1500, -2900] },
   luoxia: { position: [-1200, 1620, -850], target: [-2350, 1280, -1750] },
