@@ -1,5 +1,13 @@
 import * as THREE from "three";
-import { createGroundTexture, createRockTexture } from "../utils/textures.js";
+import {
+  createGroundTexture,
+  createLatticeTexture,
+  createPlaqueTexture,
+  createRockTexture,
+  createRoofTileTexture,
+  createStoneTexture,
+  createWoodTexture,
+} from "../utils/textures.js";
 
 /**
  * 共享材质。地形材质通过 onBeforeCompile 注入世界坐标三平面细节，
@@ -63,30 +71,66 @@ export function createMaterials() {
     rockTexture: rock,
     groundTexture: ground,
     stone: new THREE.MeshStandardMaterial({
-      color: 0x8d8778,
+      color: 0xbdb4a4,
+      map: createStoneTexture(),
       roughness: 0.88,
       metalness: 0,
     }),
     darkStone: new THREE.MeshStandardMaterial({
-      color: 0x55514a,
+      color: 0x777268,
+      map: createStoneTexture(),
       roughness: 0.9,
       metalness: 0,
     }),
     wood: new THREE.MeshStandardMaterial({
-      color: 0x4a3324,
+      color: 0x9a7a5c,
+      map: createWoodTexture(),
       roughness: 0.78,
       metalness: 0,
     }),
+    column: new THREE.MeshStandardMaterial({
+      color: 0x7a3b2c,
+      roughness: 0.62,
+      metalness: 0.02,
+    }),
+    wall: new THREE.MeshStandardMaterial({
+      color: 0x3a2a20,
+      roughness: 0.86,
+      metalness: 0,
+    }),
+    darkWood: new THREE.MeshStandardMaterial({
+      color: 0x2c1e16,
+      roughness: 0.82,
+      metalness: 0,
+    }),
     roof: new THREE.MeshStandardMaterial({
-      color: 0x2e3238,
-      roughness: 0.72,
-      metalness: 0.06,
+      color: 0xffffff,
+      map: createRoofTileTexture(),
+      roughness: 0.68,
+      metalness: 0.08,
+      side: THREE.DoubleSide,
+    }),
+    lattice: new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: createLatticeTexture(),
+      emissive: 0x3a2410,
+      emissiveIntensity: 0.55,
+      roughness: 0.7,
+      metalness: 0,
     }),
     gold: new THREE.MeshStandardMaterial({
       color: 0xb08a4a,
       roughness: 0.42,
       metalness: 0.55,
     }),
+    makePlaque(text) {
+      return new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        map: createPlaqueTexture(text),
+        roughness: 0.6,
+        metalness: 0.1,
+      });
+    },
   };
   return shared;
 }

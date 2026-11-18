@@ -7,8 +7,21 @@ import { fbm2, fbm3Tileable, ridged2, seededRandom } from "./noise.js";
  */
 
 const cache = new Map();
+const hasDOM = typeof document !== "undefined";
+let fallbackTexture = null;
+
+/** Node 测试环境没有 Canvas：返回 1×1 白色纹理，让几何测试可以跑。 */
+function fallback() {
+  if (!fallbackTexture) {
+    const data = new Uint8Array([255, 255, 255, 255]);
+    fallbackTexture = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat);
+    fallbackTexture.needsUpdate = true;
+  }
+  return fallbackTexture;
+}
 
 function canvasTexture(key, size, draw, { srgb = false } = {}) {
+  if (!hasDOM) return fallback();
   if (cache.has(key)) return cache.get(key);
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -89,6 +102,160 @@ export function createGroundTexture() {
       return 0.5 + broad * 0.36 + (patch - 0.5) * 0.18;
     });
   });
+}
+
+/** 青瓦：横向瓦垄 + 错缝，深灰蓝。 */
+export function createRoofTileTexture() {
+  return canvasTexture(
+    "roof-tile",
+    256,
+    (context, size) => {
+      context.fillStyle = "#2b3038";
+      context.fillRect(0, 0, size, size);
+      const rowHeight = 16;
+      const tileWidth = 20;
+      for (let row = 0; row < size / rowHeight; row++) {
+        const y = row * rowHeight;
+        context.fillStyle = row % 2 === 0 ? "#343a44" : "#2f353e";
+        context.fillRect(0, y, size, rowHeight - 2);
+        context.fillStyle = "#1c2027";
+        context.fillRect(0, y + rowHeight - 2, size, 2);
+        context.fillStyle = "#4a525f";
+        for (let x = (row % 2) * (tileWidth / 2); x < size; x += tileWidth) {
+          context.fillRect(x, y + 2, 2, rowHeight - 4);
+        }
+      }
+      context.globalAlpha = 0.16;
+      context.fillStyle = "#0b0d10";
+      for (let i = 0; i < 300; i++) {
+        const x = (i * 97) % size;
+        const y = (i * 61) % size;
+        context.fillRect(x, y, 3, 3);
+      }
+      context.globalAlpha = 1;
+    },
+    { srgb: true },
+  );
+}
+
+/** 深色木纹。 */
+export function createWoodTexture() {
+  return canvasTexture(
+    "wood-grain",
+    256,
+    (context, size) => {
+      context.fillStyle = "#4a3324";
+      context.fillRect(0, 0, size, size);
+      const random = seededRandom(8821);
+      for (let i = 0; i < 90; i++) {
+        const x = random() * size;
+        const width = 0.6 + random() * 2.4;
+        const shade = 40 + random() * 50;
+        context.fillStyle = `rgba(${shade * 0.7}, ${shade * 0.48}, ${shade * 0.3}, 0.35)`;
+        context.fillRect(x, 0, width, size);
+      }
+      context.globalAlpha = 0.25;
+      context.fillStyle = "#1a100a";
+      for (let i = 0; i < 26; i++) {
+        const y = random() * size;
+        context.fillRect(0, y, size, 1);
+      }
+      context.globalAlpha = 1;
+    },
+    { srgb: true },
+  );
+}
+
+/** 窗棂格栅：深底 + 暖色木格。 */
+export function createLatticeTexture() {
+  return canvasTexture(
+    "lattice",
+    256,
+    (context, size) => {
+      context.fillStyle = "#181310";
+      context.fillRect(0, 0, size, size);
+      context.strokeStyle = "#8a6335";
+      context.lineWidth = 4;
+      const step = 32;
+      for (let i = 0; i <= size; i += step) {
+        context.beginPath();
+        context.moveTo(i, 0);
+        context.lineTo(i, size);
+        context.stroke();
+        context.beginPath();
+        context.moveTo(0, i);
+        context.lineTo(size, i);
+        context.stroke();
+      }
+      context.strokeStyle = "#5d4223";
+      context.lineWidth = 2;
+      for (let i = step / 2; i <= size; i += step) {
+        context.beginPath();
+        context.moveTo(i, 0);
+        context.lineTo(i, size);
+        context.stroke();
+        context.beginPath();
+        context.moveTo(0, i);
+        context.lineTo(size, i);
+        context.stroke();
+      }
+    },
+    { srgb: true },
+  );
+}
+
+/** 石材：错缝砌块。 */
+export function createStoneTexture() {
+  return canvasTexture(
+    "stone-block",
+    256,
+    (context, size) => {
+      context.fillStyle = "#8c867a";
+      context.fillRect(0, 0, size, size);
+      const rowHeight = 32;
+      const blockWidth = 64;
+      for (let row = 0; row < size / rowHeight; row++) {
+        const offset = row % 2 === 0 ? 0 : blockWidth / 2;
+        for (let x = -blockWidth; x < size; x += blockWidth) {
+          const shade = 120 + ((row * 37 + x * 13) % 34);
+          context.fillStyle = `rgb(${shade}, ${shade - 5}, ${shade - 14})`;
+          context.fillRect(x + offset + 2, row * rowHeight + 2, blockWidth - 4, rowHeight - 4);
+        }
+      }
+      context.strokeStyle = "rgba(40,38,34,0.5)";
+      context.lineWidth = 2;
+      for (let row = 0; row <= size; row += rowHeight) {
+        context.beginPath();
+        context.moveTo(0, row);
+        context.lineTo(size, row);
+        context.stroke();
+      }
+    },
+    { srgb: true },
+  );
+}
+
+/** 匾额：深底金字。 */
+export function createPlaqueTexture(text) {
+  const key = `plaque-${text}`;
+  if (!hasDOM) return fallback();
+  return canvasTexture(
+    key,
+    512,
+    (context, size) => {
+      context.fillStyle = "#141a22";
+      context.fillRect(0, 0, size, size * 0.4);
+      context.strokeStyle = "#b08a4a";
+      context.lineWidth = 8;
+      context.strokeRect(10, 10, size - 20, size * 0.4 - 20);
+      context.fillStyle = "#d8b06a";
+      context.font = 'bold 108px "Songti SC", "STSong", serif';
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(text, size / 2, size * 0.2);
+    },
+    { srgb: true },
+  );
 }
 
 /**
