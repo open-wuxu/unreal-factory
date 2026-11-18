@@ -1,0 +1,20 @@
+{
+  "name": "qingyun-seven-peaks",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "诛仙 · 青云山七峰 —— 程序化 Three.js 仙侠山脉与 36 秒电影短片",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node scripts/test-core.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1",
+    "vite": "^7.1.0"
+  }
+}
