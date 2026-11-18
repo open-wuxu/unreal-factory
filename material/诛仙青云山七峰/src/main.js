@@ -10,6 +10,8 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 
 import { ATMOSPHERE, CAMERA_VIEWS } from "./config.js";
+import { createFilm } from "./film.js";
+import { FILM_DURATION, FILM_FPS } from "./filmTimeline.js";
 import { createWorld } from "./world/index.js";
 import { heightAt } from "./world/shape.js";
 import { createUI, hideLoading, showFallback } from "./ui.js";
@@ -90,6 +92,10 @@ function bootstrap() {
     return;
   }
 
+  const params = new URLSearchParams(window.location.search);
+  const filmMode = params.has("film");
+  const captureMode = params.has("capture");
+
   const canvas = document.getElementById("scene");
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -126,8 +132,7 @@ function bootstrap() {
   controls.minDistance = 40;
   controls.maxDistance = 22000;
   controls.maxPolarAngle = Math.PI * 0.495;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.16;
+  controls.enabled = false;
   controls.update();
 
   const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
@@ -161,11 +166,22 @@ function bootstrap() {
   const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
   composer.addPass(smaaPass);
 
-  /* 状态 ------------------------------------------------------------ */
+  /* 影片与 UI ------------------------------------------------------- */
 
-  let mode = "demo"; // demo | free
+  let mode = "demo"; // demo 播放影片 | free 自由浏览
   let playing = true;
   let currentView = "overview";
+  let loadingHidden = false;
+
+  const film = createFilm({
+    camera,
+    controls,
+    world,
+    composer,
+    onBeforeFrame: (time) => {
+      gradePass.uniforms.uTime.value = time;
+    },
+  });
 
   const flight = {
     active: false,
@@ -178,7 +194,6 @@ function bootstrap() {
   };
 
   const shadowFocus = controls.target.clone();
-  world.setShadowFocus(shadowFocus, 1400);
 
   function flyTo(view, duration = 1.7) {
     if (!view) return;
@@ -189,7 +204,6 @@ function bootstrap() {
     flight.elapsed = 0;
     flight.duration = duration;
     flight.active = true;
-    controls.autoRotate = false;
     world.setShadowFocus(flight.toTarget, 1500);
   }
 
@@ -202,7 +216,6 @@ function bootstrap() {
     camera.lookAt(controls.target);
     if (flight.elapsed >= flight.duration) {
       flight.active = false;
-      controls.autoRotate = mode === "demo";
       controls.update();
     }
   }
@@ -215,46 +228,64 @@ function bootstrap() {
   }
 
   function enterFreeMode() {
-    if (mode === "free") return;
+    if (filmMode || mode === "free") return;
     mode = "free";
     playing = false;
+    controls.enabled = true;
+    flight.active = false;
     controls.autoRotate = false;
     ui.setPlaying(false);
     ui.setFreeMode(true);
+    ui.setTime(film.time, FILM_DURATION);
+  }
+
+  function resumeDemo() {
+    mode = "demo";
+    playing = true;
+    controls.enabled = false;
+    ui.setFreeMode(false);
+    ui.setPlaying(true);
+    film.seek(film.time);
   }
 
   const ui = createUI({
     onView: (name) => {
-      if (mode !== "demo") {
-        mode = "demo";
-        ui.setFreeMode(false);
-      }
+      enterFreeMode();
       setView(name);
       ui.setView(name);
     },
     onPlayToggle: () => {
+      if (filmMode) return;
       if (mode === "free") {
-        mode = "demo";
-        playing = true;
-        ui.setFreeMode(false);
-        controls.autoRotate = true;
+        resumeDemo();
       } else {
         playing = !playing;
-        controls.autoRotate = playing;
+        ui.setPlaying(playing);
       }
-      ui.setPlaying(playing);
     },
     onReplay: () => {
+      if (filmMode) return;
       mode = "demo";
       playing = true;
+      controls.enabled = false;
       ui.setFreeMode(false);
       ui.setPlaying(true);
       ui.setView("overview");
       currentView = "overview";
-      flyTo(CAMERA_VIEWS.overview, 1.9);
+      film.reset();
+      film.seek(0);
+      film.time = 0;
     },
-    onSeek: () => {
-      // 影片时间线在后续任务接入；自由浏览下不改变画面。
+    onSeek: (value) => {
+      if (filmMode) return;
+      mode = "demo";
+      playing = false;
+      controls.enabled = false;
+      ui.setFreeMode(false);
+      ui.setPlaying(false);
+      film.seek(value);
+      film.time = value;
+      ui.setTime(value, FILM_DURATION);
     },
     onToggle: (key, value) => {
       if (key === "clouds") world.clouds.setEnabled(value);
@@ -267,25 +298,37 @@ function bootstrap() {
 
   ui.setPlaying(true);
   ui.setView("overview");
-  ui.setTime(0, 36);
+  ui.setTime(0, FILM_DURATION);
 
-  /* 初始机位 -------------------------------------------------------- */
+  /* 初始机位（自由浏览 URL） --------------------------------------- */
 
-  const params = new URLSearchParams(window.location.search);
-  const viewName = params.get("view");
-  if (viewName === "ground") {
-    const x = -1100;
-    const z = 1400;
-    camera.position.set(x, heightAt(x, z) + 8, z);
-    controls.target.set(0, 1520, 0);
-    controls.autoRotate = false;
-    controls.update();
-  } else if (CAMERA_VIEWS[viewName]) {
-    camera.position.fromArray(CAMERA_VIEWS[viewName].position);
-    controls.target.fromArray(CAMERA_VIEWS[viewName].target);
-    controls.update();
-    currentView = viewName;
-    ui.setView(viewName);
+  if (!filmMode) {
+    const viewName = params.get("view");
+    if (viewName === "ground") {
+      const x = -1100;
+      const z = 1400;
+      mode = "free";
+      playing = false;
+      controls.enabled = true;
+      camera.position.set(x, heightAt(x, z) + 8, z);
+      controls.target.set(0, 1520, 0);
+      controls.update();
+      ui.setFreeMode(true);
+      ui.setPlaying(false);
+      ui.setTime(0, FILM_DURATION);
+    } else if (CAMERA_VIEWS[viewName]) {
+      mode = "free";
+      playing = false;
+      controls.enabled = true;
+      camera.position.fromArray(CAMERA_VIEWS[viewName].position);
+      controls.target.fromArray(CAMERA_VIEWS[viewName].target);
+      controls.update();
+      currentView = viewName;
+      ui.setFreeMode(true);
+      ui.setPlaying(false);
+      ui.setView(viewName);
+      ui.setTime(0, FILM_DURATION);
+    }
   }
 
   /* 交互 ------------------------------------------------------------ */
@@ -296,24 +339,20 @@ function bootstrap() {
   });
 
   window.addEventListener("keydown", (event) => {
+    if (filmMode) return;
     if (event.code === "Space") {
       event.preventDefault();
-      if (mode === "free") {
-        mode = "demo";
-        playing = true;
-        ui.setFreeMode(false);
-        controls.autoRotate = true;
-        ui.setPlaying(true);
-      } else {
+      if (mode === "free") resumeDemo();
+      else {
         playing = !playing;
-        controls.autoRotate = playing;
         ui.setPlaying(playing);
       }
     } else if (event.code === "KeyR") {
-      mode = "demo";
-      playing = true;
-      ui.setFreeMode(false);
-      ui.setPlaying(true);
+      mode = "free";
+      playing = false;
+      controls.enabled = true;
+      ui.setFreeMode(true);
+      ui.setPlaying(false);
       ui.setView("overview");
       currentView = "overview";
       flyTo(CAMERA_VIEWS.overview, 1.9);
@@ -330,10 +369,11 @@ function bootstrap() {
       ];
       const name = names[Number(event.code.slice(-1)) - 1];
       if (name) {
-        mode = "demo";
-        playing = true;
-        ui.setFreeMode(false);
-        ui.setPlaying(true);
+        mode = "free";
+        playing = false;
+        controls.enabled = true;
+        ui.setFreeMode(true);
+        ui.setPlaying(false);
         setView(name);
         ui.setView(name);
       }
@@ -343,10 +383,9 @@ function bootstrap() {
   /* 主循环 ---------------------------------------------------------- */
 
   const clock = new THREE.Clock();
-  let firstFrame = true;
   let shadowClock = 0;
 
-  function updateCamera(delta) {
+  function updateFreeCamera(delta) {
     if (flight.active) {
       updateFlight(delta);
     } else {
@@ -373,19 +412,73 @@ function bootstrap() {
     const delta = Math.min(clock.getDelta(), 0.05);
     const elapsed = clock.elapsedTime;
 
-    updateCamera(delta);
-    world.update(delta, elapsed, { time: elapsed });
-    gradePass.uniforms.uTime.value = elapsed;
-    composer.render();
+    if (mode === "demo") {
+      if (playing) film.update(delta);
+      else film.renderFrame(film.time);
+      ui.setTime(film.time, FILM_DURATION);
+    } else {
+      updateFreeCamera(delta);
+      world.update(delta, elapsed, { time: elapsed });
+      gradePass.uniforms.uTime.value = elapsed;
+      composer.render();
+    }
 
-    if (firstFrame) {
-      firstFrame = false;
+    if (!loadingHidden) {
+      loadingHidden = true;
       hideLoading();
-      ui.setTime(0, 36);
     }
   }
 
-  renderer.setAnimationLoop(animate);
+  /* 影片模式 -------------------------------------------------------- */
+
+  if (filmMode) {
+    document.body.classList.add("is-film");
+    controls.enabled = false;
+    playing = !captureMode;
+    film.seek(0);
+    film.time = 0;
+
+    const soundButton = document.getElementById("film-sound");
+    if (soundButton) {
+      soundButton.addEventListener("click", () => {
+        const enabled = soundButton.getAttribute("aria-pressed") !== "true";
+        soundButton.setAttribute("aria-pressed", String(enabled));
+        soundButton.textContent = enabled ? "声音 · 开" : "声音 · 关";
+      });
+    }
+
+    if (captureMode) {
+      document.body.classList.add("capture-mode");
+      renderer.setAnimationLoop(null);
+      film.renderFrame(0);
+      hideLoading();
+      window.__capture = {
+        ready: true,
+        duration: FILM_DURATION,
+        fps: FILM_FPS,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        renderAt: (time) => {
+          film.renderFrame(time);
+          gradePass.uniforms.uTime.value = time;
+          if (world.sunLight?.shadow) world.sunLight.shadow.needsUpdate = true;
+        },
+        reset: () => film.reset(),
+      };
+    } else {
+      const filmClock = new THREE.Clock();
+      renderer.setAnimationLoop(() => {
+        const delta = Math.min(filmClock.getDelta(), 0.05);
+        film.update(delta);
+        if (!loadingHidden) {
+          loadingHidden = true;
+          hideLoading();
+        }
+      });
+    }
+  } else {
+    renderer.setAnimationLoop(animate);
+  }
 
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -403,6 +496,9 @@ function bootstrap() {
     composer,
     world,
     ui,
+    film,
+    filmMode,
+    captureMode,
     bloomPass,
     gradePass,
     smaaPass,
@@ -421,8 +517,8 @@ function bootstrap() {
       mode = "free";
       playing = false;
       flight.active = false;
-      controls.autoRotate = false;
       controls.enabled = true;
+      controls.autoRotate = false;
       camera.position.fromArray(position);
       controls.target.fromArray(target);
       controls.update();
@@ -432,6 +528,15 @@ function bootstrap() {
     setShadowFocus(point, extent = 1400) {
       shadowFocus.copy(point);
       world.setShadowFocus(shadowFocus, extent);
+    },
+    setDemo(time = 0) {
+      mode = "demo";
+      playing = true;
+      controls.enabled = false;
+      ui.setFreeMode(false);
+      ui.setPlaying(true);
+      film.seek(time);
+      film.time = time;
     },
   };
 }

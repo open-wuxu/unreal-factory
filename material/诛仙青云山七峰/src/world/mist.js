@@ -7,10 +7,9 @@ import { createMistTexture } from "../utils/textures.js";
  */
 
 const SHEETS = [
-  { x: 0, y: 1120, z: 0, size: 4200, opacity: 0.15, speed: 5, phase: 0.3 },
-  { x: -600, y: 1250, z: -800, size: 3200, opacity: 0.12, speed: -4, phase: 1.7 },
-  { x: 800, y: 1030, z: 700, size: 3600, opacity: 0.1, speed: 3, phase: 2.9 },
-  { x: -2600, y: 1210, z: -400, size: 2600, opacity: 0.14, speed: 6, phase: 4.1 },
+  { x: 0, y: 900, z: 0, size: 2600, opacity: 0.06, speed: 4, phase: 0.3 },
+  { x: -2800, y: 960, z: 300, size: 2200, opacity: 0.07, speed: -3, phase: 1.7 },
+  { x: -2400, y: 980, z: -1200, size: 2200, opacity: 0.05, speed: 5, phase: 2.9 },
 ];
 
 export function createMist(scene) {
