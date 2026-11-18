@@ -179,18 +179,51 @@ export function createSky(scene, renderer) {
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envScene = new THREE.Scene();
-  const envDome = new THREE.Mesh(new THREE.SphereGeometry(50, 32, 24), material);
+  // 环境球使用独立材质：环境贴图只由量化后的时间桶决定，
+  // 保证从任意时间轴位置 seek 到同一时刻得到同一张环境贴图。
+  const envMaterial = material.clone();
+  const envDome = new THREE.Mesh(
+    new THREE.SphereGeometry(50, 32, 24),
+    envMaterial,
+  );
   envDome.frustumCulled = false;
   envScene.add(envDome);
   let environment = null;
-  let envTime = -999;
+  let envBucket = -1;
   const sunDirection = new THREE.Vector3();
   const shadowFocus = new THREE.Vector3(0, 900, 0);
   let state = sampleKeys(0);
 
+  function directionFor(time, target) {
+    const sampled = sampleKeys(time);
+    const az = THREE.MathUtils.degToRad(sampled.azimuth);
+    const el = THREE.MathUtils.degToRad(sampled.elevation);
+    return target
+      .set(
+        Math.sin(az) * Math.cos(el),
+        Math.sin(el),
+        -Math.cos(az) * Math.cos(el),
+      )
+      .normalize();
+  }
+
   function regenerateEnvironment(t, force = false) {
-    if (!force && Math.abs(t - envTime) < 2.2) return;
-    envTime = t;
+    const bucket = Math.floor(t / 2.2 + 1e-6) * 2.2;
+    if (!force && bucket === envBucket) return;
+    envBucket = bucket;
+
+    const sampled = sampleKeys(bucket);
+    envMaterial.uniforms.uSkyTop.value.copy(sampled.colors.skyTop);
+    envMaterial.uniforms.uSkyHorizon.value.copy(sampled.colors.skyHorizon);
+    envMaterial.uniforms.uSunColor.value.copy(sampled.colors.color);
+    envMaterial.uniforms.uCloudLit.value.copy(sampled.colors.cloudLit);
+    envMaterial.uniforms.uCloudShadow.value.copy(sampled.colors.cloudShadow);
+    directionFor(
+      bucket,
+      envMaterial.uniforms.uSunDirection.value,
+    );
+    envMaterial.uniforms.uTime.value = bucket;
+
     const target = pmrem.fromScene(envScene, 0, 0.1, 200);
     if (environment) environment.dispose();
     environment = target;
@@ -248,7 +281,10 @@ export function createSky(scene, renderer) {
     sunLight.position.copy(sunDirection).multiplyScalar(6000).add(shadowFocus);
     sunLight.target.position.copy(shadowFocus);
     sunLight.target.updateMatrixWorld();
+    // three 的全局开关：autoUpdate=false 时必须显式请求一次阴影贴图重建，
+    // 否则阴影贴图永远不会被分配，所有 StandardMaterial 网格都会停止绘制。
     sunLight.shadow.needsUpdate = true;
+    renderer.shadowMap.needsUpdate = true;
   }
 
   function update(delta, stateIn) {

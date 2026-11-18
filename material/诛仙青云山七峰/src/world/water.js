@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { createSprayTexture } from "../utils/textures.js";
+import { seededRandom } from "../utils/noise.js";
 import { heightAt } from "./shape.js";
 
 /**
@@ -182,11 +183,12 @@ export function createWater(scene) {
   const sprayTexture = createSprayTexture();
   const sprayCount = 260;
   const sprayPositions = new Float32Array(sprayCount * 3);
+  const sprayRandom = seededRandom(7741);
   for (let i = 0; i < sprayCount; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 34;
+    const angle = sprayRandom() * Math.PI * 2;
+    const radius = sprayRandom() * 34;
     sprayPositions[i * 3] = end.x + Math.cos(angle) * radius;
-    sprayPositions[i * 3 + 1] = end.y + Math.random() * 26;
+    sprayPositions[i * 3 + 1] = end.y + sprayRandom() * 26;
     sprayPositions[i * 3 + 2] = end.z + Math.sin(angle) * radius;
   }
   const sprayGeometry = new THREE.BufferGeometry();
@@ -250,13 +252,16 @@ export function createWater(scene) {
 
   scene.add(group);
 
+  let clock = 0;
+
   function update(delta, state) {
     if (state && state.time !== undefined) {
-      timeUniform.value = state.time;
+      clock = state.time;
     } else {
-      timeUniform.value += delta;
+      clock += delta;
     }
-    spray.rotation.y += delta * 0.05;
+    timeUniform.value = clock;
+    spray.rotation.y = clock * 0.05;
   }
 
   return {

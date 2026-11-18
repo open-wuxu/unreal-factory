@@ -12,8 +12,10 @@ function createNoiseBuffer(context, seconds = 2) {
   const buffer = context.createBuffer(1, length, context.sampleRate);
   const data = buffer.getChannelData(0);
   let last = 0;
+  let seed = 0x51ed;
   for (let i = 0; i < length; i++) {
-    const white = Math.random() * 2 - 1;
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const white = (seed / 4294967296) * 2 - 1;
     last = last * 0.94 + white * 0.06;
     data[i] = last * 3.2;
   }
@@ -145,10 +147,16 @@ export function createAudio() {
       );
     }
 
-    // 每轮影片只在片尾撞一次钟。
-    if (time > BELL_TIME && lastBellCycle !== Math.floor(time / 40)) {
-      lastBellCycle = Math.floor(time / 40);
-      if (time < BELL_TIME + 1.2) ringBell();
+    // 每轮影片只在片尾撞一次钟；时间回到开头后重新布防。
+    if (time < BELL_TIME - 0.5) {
+      lastBellCycle = -1;
+    } else if (
+      time >= BELL_TIME &&
+      time < BELL_TIME + 1.2 &&
+      lastBellCycle !== 1
+    ) {
+      lastBellCycle = 1;
+      ringBell();
     }
   }
 

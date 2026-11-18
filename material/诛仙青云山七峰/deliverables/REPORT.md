@@ -12,8 +12,8 @@
 | `deliverables/previews/01–07-*.png` | 七张 2560×1440 关键镜头截图 |
 | `deliverables/frames/` | 2160 帧 JPEG 序列 + manifest.json（gitignore，可重新生成） |
 
-本次逐帧捕获耗时 **305 秒**（6.55 帧/秒），编码为 libx264 CRF 16 / preset slow /
-BT.709 / yuv420p。帧序列可由 `manifest.json` 复核。
+本次逐帧捕获耗时 **264 秒**（约 8.2 帧/秒；建筑合并后 draw call 从 3188 级降到 32 个批次），
+编码为 libx264 CRF 16 / preset slow / BT.709 / yuv420p。帧序列可由 `manifest.json` 复核。
 
 ## 渲染与导出
 

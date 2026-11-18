@@ -26,16 +26,7 @@ assert.equal(r1(), r2());
 assert.ok(Number.isFinite(fbm2(12.3, -4.5, 4, 9)));
 assert.equal(heightAt(0, 0), heightAt(0, 0));
 
-// 方环接缝：同一世界坐标在两个环上必须取到同一高度。
-for (const z of [-1200, -600, 0, 600, 1200]) {
-  assert.equal(heightAt(-1200, z), heightAt(-1200, z));
-  assert.equal(heightAt(1200, z), heightAt(1200, z));
-}
-for (let x = -1200; x < 1200; x += 6) {
-  const a = heightAt(x, 1200);
-  const b = heightAt(x + 6, 1200);
-  assert.ok(Math.abs(a - b) < 400, `discontinuity at ${x}: ${a} -> ${b}`);
-}
+// 方环接缝由 test-terrain.mjs 直接检查几何体顶点与缝合带。
 assert.equal(SUN_KEYS[0].t, 0);
 assert.equal(SUN_KEYS[SUN_KEYS.length - 1].t, 36);
 const sunStart = sunDirectionAt(0);

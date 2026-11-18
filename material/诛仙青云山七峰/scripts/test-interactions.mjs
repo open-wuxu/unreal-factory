@@ -115,20 +115,46 @@ const clampOk = await page.evaluate(({ x, z }) => {
 }, clampResult);
 if (!clampOk) throw new Error("camera sunk through terrain");
 
-// 阴影焦点：切换两次焦点，光源 target 必须跟随。
+// 阴影焦点：切换两次焦点，光源 target 必须跟随，且不应每帧自动重建。
 const shadowOk = await page.evaluate(() => {
-  const { world, THREE } = window.__qingyun;
+  const { world, renderer, THREE } = window.__qingyun;
   world.setShadowFocus(new THREE.Vector3(-2000, 1170, 2600), 1200);
   const a = world.sky.sunLight.target.position.clone();
   world.setShadowFocus(new THREE.Vector3(1700, 1330, 2900), 1200);
   const b = world.sky.sunLight.target.position.clone();
   return (
+    renderer.shadowMap.autoUpdate === false &&
     a.distanceTo(new THREE.Vector3(-2000, 1170, 2600)) < 1 &&
     b.distanceTo(new THREE.Vector3(1700, 1330, 2900)) < 1 &&
     world.sky.sunLight.shadow.needsUpdate === true
   );
 });
 if (!shadowOk) throw new Error("shadow focus did not follow");
+
+// 飞行途中也必须贴地：从龙首飞到小竹，逐帧采样离地高度。
+await page.click('[data-view="longshou"]');
+await page.waitForFunction(() => !window.__qingyun.flight.active, null, {
+  timeout: 30000,
+});
+await page.click('[data-view="xiaozhu"]');
+let minClearance = Infinity;
+for (let i = 0; i < 30; i++) {
+  await page.waitForTimeout(80);
+  const sample = await page.evaluate(() => {
+    const { camera, world, flight } = window.__qingyun;
+    return {
+      clearance:
+        camera.position.y -
+        world.terrain.sampleHeight(camera.position.x, camera.position.z),
+      active: flight.active,
+    };
+  });
+  minClearance = Math.min(minClearance, sample.clearance);
+  if (!sample.active) break;
+}
+if (minClearance < 4) {
+  throw new Error(`flight drilled into terrain (${minClearance.toFixed(1)} m)`);
+}
 
 await page.setViewportSize({ width: 1280, height: 720 });
 await page.waitForTimeout(1200);

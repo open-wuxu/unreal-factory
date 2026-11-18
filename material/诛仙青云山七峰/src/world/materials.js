@@ -22,6 +22,7 @@ function makeTerrainMaterial(detail) {
     roughness: 0.94,
     metalness: 0,
     dithering: true,
+    side: THREE.DoubleSide,
   });
 
   material.onBeforeCompile = (shader) => {

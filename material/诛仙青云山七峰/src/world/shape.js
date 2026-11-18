@@ -134,10 +134,13 @@ export function heightAt(x, z) {
   let nearestScore = Infinity;
 
   for (const peak of PEAK_DATA) {
-    const { body, d } = peakBody(peak, x, z);
+    const { body } = peakBody(peak, x, z);
     peakMax = Math.max(peakMax, body);
     sum += body;
-    const score = d / peak.plateau;
+    // 台地与细节权重必须用未做域扭曲的真实径向距离，
+    // 否则扭曲会把“平地”推到台地半径之外，建筑就会悬空。
+    const rawDistance = peakLocal(peak, x, z).d;
+    const score = rawDistance / peak.plateau;
     if (score < nearestScore) {
       nearestScore = score;
       nearest = peak;

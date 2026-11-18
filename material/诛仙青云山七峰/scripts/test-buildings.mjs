@@ -12,7 +12,7 @@ import {
   createStele,
 } from "../src/world/buildings.js";
 import { PEAKS } from "../src/config.js";
-import { createPeaks } from "../src/world/peaks.js";
+import { createPeaks, mergeStaticMeshes } from "../src/world/peaks.js";
 import { heightAt } from "../src/world/shape.js";
 
 function countMeshes(group) {
@@ -109,15 +109,48 @@ for (const peak of PEAKS) {
 
   let buildings = 0;
   for (const child of peakGroup.children) {
-    if (!child.isGroup || child.name === "staircase") continue;
+    if (!child.isGroup) continue;
+    if (child.name === "staircase") {
+      child.updateMatrixWorld(true);
+      let treads = 0;
+      child.traverse((object) => {
+        if (!object.userData.stairTread) return;
+        treads++;
+        const point = new THREE.Vector3();
+        object.getWorldPosition(point);
+        const treadTop = point.y + 0.3;
+        const ground = heightAt(point.x, point.z);
+        assert.ok(
+          Math.abs(treadTop - ground) < 3,
+          `${peak.id}: stair tread floats ${(treadTop - ground).toFixed(1)} m`,
+        );
+      });
+      assert.ok(treads > 10, `${peak.id}: only ${treads} stair treads`);
+      continue;
+    }
+
     buildings++;
+    const position = new THREE.Vector3();
+    child.getWorldPosition(position);
+    const ground = heightAt(position.x, position.z);
     const box = new THREE.Box3().setFromObject(child);
     assert.ok(
-      box.min.y >= peak.height - 8,
-      `${peak.id}: building floats under the plateau (${box.min.y})`,
+      Math.abs(box.min.y - ground) < 12,
+      `${peak.id}: ${child.name || "building"} floats ${
+        (box.min.y - ground).toFixed(1)
+      } m above ground`,
     );
   }
   assert.ok(buildings >= 5, `${peak.id}: only ${buildings} buildings`);
 }
 
-console.log("buildings ok");
+const meshesBefore = countMeshes(peaks.group);
+const merged = mergeStaticMeshes(peaks.group);
+const meshesAfter = countMeshes(merged);
+assert.ok(meshesAfter < 80, `merged meshes still ${meshesAfter}`);
+assert.ok(
+  meshesBefore > meshesAfter * 10,
+  `merge did not reduce meshes (${meshesBefore} -> ${meshesAfter})`,
+);
+
+console.log(`buildings ok (merged ${meshesBefore} -> ${meshesAfter} meshes)`);

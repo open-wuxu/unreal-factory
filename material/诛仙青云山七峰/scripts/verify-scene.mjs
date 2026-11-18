@@ -54,12 +54,32 @@ await page.waitForFunction(() => window.__qingyun?.world?.clouds, null, {
 await page.waitForTimeout(2500);
 await page.screenshot({ path: path.join(outDir, "verify-scene.png") });
 
+async function cloudTargetSize() {
+  return page.evaluate(() => ({
+    width: window.__qingyun.world.clouds.pass.halfTarget.width,
+    height: window.__qingyun.world.clouds.pass.halfTarget.height,
+    shadowAuto: window.__qingyun.renderer.shadowMap.autoUpdate,
+  }));
+}
+
 if (resize) {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.waitForTimeout(1200);
+  const small = await cloudTargetSize();
+  if (small.width !== 640 || small.height !== 360) {
+    throw new Error(`cloud target not resized to half: ${small.width}x${small.height}`);
+  }
+  if (small.shadowAuto !== false) {
+    throw new Error("shadow map should not auto-update every frame");
+  }
   await page.screenshot({ path: path.join(outDir, "verify-scene-720p.png") });
+
   await page.setViewportSize({ width: 2560, height: 1440 });
   await page.waitForTimeout(1200);
+  const large = await cloudTargetSize();
+  if (large.width !== 1280 || large.height !== 720) {
+    throw new Error(`cloud target not resized to half: ${large.width}x${large.height}`);
+  }
   await page.screenshot({ path: path.join(outDir, "verify-scene-1440p.png") });
 }
 

@@ -128,11 +128,53 @@ function buildRing(ring, ringIndex) {
     }
   }
 
+  // 缝合带：粗环的内边界每格补一个细采样中点，填平与细环之间的
+  // T 型接缝（细环单元恰好是粗环的一半）。
+  if (inner > 0) {
+    const innerStart = Math.round((half - inner) / cell);
+    const innerEnd = Math.round((half + inner) / cell);
+    const addStitch = (indexA, indexB) => {
+      const a = map[indexA];
+      const b = map[indexB];
+      if (a < 0 || b < 0) return;
+      const ax = vertices[a * 3];
+      const az = vertices[a * 3 + 2];
+      const bx = vertices[b * 3];
+      const bz = vertices[b * 3 + 2];
+      const mx = (ax + bx) / 2;
+      const mz = (az + bz) / 2;
+      const mid = vertices.length / 3;
+      vertices.push(mx, heightAt(mx, mz), mz);
+      indices.push(a, b, mid);
+    };
+    for (let i = innerStart; i < innerEnd; i++) {
+      addStitch(innerStart * stride + i, innerStart * stride + i + 1);
+      addStitch(innerEnd * stride + i, innerEnd * stride + i + 1);
+    }
+    for (let j = innerStart; j < innerEnd; j++) {
+      addStitch(j * stride + innerStart, (j + 1) * stride + innerStart);
+      addStitch(j * stride + innerEnd, (j + 1) * stride + innerEnd);
+    }
+  }
+
   const position = new Float32Array(vertices);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
+
+  // 法线统一由解析函数取样，保证相邻环在共享边上的光照一致。
+  const normalArray = new Float32Array(position.length);
+  const normal = new THREE.Vector3();
+  for (let v = 0; v < position.length / 3; v++) {
+    normalAt(position[v * 3], position[v * 3 + 2], normal);
+    normalArray[v * 3] = normal.x;
+    normalArray[v * 3 + 1] = normal.y;
+    normalArray[v * 3 + 2] = normal.z;
+  }
+  geometry.setAttribute(
+    "normal",
+    new THREE.BufferAttribute(normalArray, 3),
+  );
   geometry.computeBoundingSphere();
 
   const normals = geometry.getAttribute("normal");
@@ -145,7 +187,14 @@ function buildRing(ring, ringIndex) {
     const y = position[v * 3 + 1];
     const normalY = Math.abs(normals.getY(v));
     const { peak, distance } = nearestPeak(x, z);
-    const ao = ambientOcclusion(x, z, y, aoSample);
+    const rawAo = ambientOcclusion(x, z, y, aoSample);
+    // 近环外缘把 AO 渐隐到 1，避免与无 AO 的粗环形成亮度接缝。
+    const edgeFade = smoothstep(
+      ring.half - 300,
+      ring.half,
+      Math.max(Math.abs(x), Math.abs(z)),
+    );
+    const ao = aoSample ? 1 - (1 - rawAo) * (1 - edgeFade) : 1;
     const color = colorFor(x, z, y, normalY, peak, distance);
     color.multiplyScalar(ao);
     colors[v * 3] = color.r;

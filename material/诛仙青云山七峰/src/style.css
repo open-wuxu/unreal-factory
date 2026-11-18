@@ -255,7 +255,8 @@ body {
   display: none;
 }
 
-body.is-film .film {
+body.is-film .film,
+body.is-demo .film {
   display: block;
 }
 
@@ -345,8 +346,39 @@ body.subtitles-off .film__title {
   display: none;
 }
 
-body.capture-mode .film__sound {
+body.capture-mode .film__sound,
+body.capture-mode .film__back {
   display: none;
+}
+
+/* 演示模式下影片层与 HUD 共存：字幕与转场可见，声音用 HUD 开关。 */
+body.is-demo:not(.is-film) .film__sound {
+  display: none;
+}
+
+.watch {
+  padding: 7px 13px;
+  border: 1px solid rgba(216, 176, 106, 0.6);
+  border-radius: 999px;
+  color: #ffe6b6;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  background: rgba(216, 176, 106, 0.12);
+  pointer-events: auto;
+}
+
+.film__back {
+  position: absolute;
+  top: 26px;
+  left: 28px;
+  pointer-events: auto;
+  color: rgba(236, 227, 210, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(216, 176, 106, 0.35);
+  padding-bottom: 4px;
 }
 
 @media (max-width: 860px) {

@@ -1,7 +1,7 @@
 import { createBirds } from "./birds.js";
 import { createClouds } from "./clouds.js";
 import { createMist } from "./mist.js";
-import { createPeaks } from "./peaks.js";
+import { createPeaks, mergeStaticMeshes } from "./peaks.js";
 import { createWater } from "./water.js";
 import { createSky } from "./sky.js";
 import { createTerrain } from "./terrain.js";
@@ -15,6 +15,8 @@ export function createWorld(scene, camera, renderer) {
   const sky = createSky(scene, renderer);
   const terrain = createTerrain(scene);
   const peaks = createPeaks(scene);
+  const mergedPeaks = mergeStaticMeshes(peaks.group);
+  scene.add(mergedPeaks);
   const vegetation = createVegetation(scene);
   const water = createWater(scene);
   const mist = createMist(scene);
@@ -23,6 +25,7 @@ export function createWorld(scene, camera, renderer) {
 
   function update(delta, elapsed, state) {
     void elapsed;
+    sky.group.position.copy(camera.position);
     sky.update(delta, state);
     peaks.update(delta, state);
     vegetation.update(delta, state);

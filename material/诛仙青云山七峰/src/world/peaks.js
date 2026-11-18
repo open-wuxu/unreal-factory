@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { PEAKS } from "../config.js";
 import {
   createBalustrade,
@@ -51,7 +52,7 @@ function stairs(group, groundLocal, fromZ, toZ, width, risers) {
     to: new THREE.Vector3(0, groundLocal(0, toZ), toZ),
     width,
     risers,
-    surfaceAt: (z) => groundLocal(0, z),
+    surfaceAt: (z) => groundLocal(0, fromZ + z),
   });
   stair.name = "staircase";
   group.add(stair);
@@ -382,6 +383,15 @@ export function createPeaks(scene) {
     peakGroup.rotation.y = frame.rotation;
 
     FURNISH[peak.id]?.(peakGroup, frame.groundLocal);
+
+    // 把每个建筑组坐落在其所在位置的真实地面上，避免台地边缘悬空。
+    // 石阶已经按地形逐级铺板，单独处理。
+    for (const child of peakGroup.children) {
+      if (!child.isGroup || child.name === "staircase") continue;
+      child.position.y = frame.groundLocal(child.position.x, child.position.z);
+      child.userData.grounded = true;
+    }
+
     group.add(peakGroup);
 
     const main = frame.toWorld(0, -15);
@@ -400,4 +410,67 @@ export function createPeaks(scene) {
     complexes,
     update() {},
   };
+}
+
+/**
+ * 把七峰里按材质分组的静态 Mesh 合并成少量几何体。
+ * 3188 个独立 Mesh 会带来 3000+ draw call；合并后只剩十余个共享材质批次，
+ * 列柱等 InstancedMesh 保持原样。
+ */
+export function mergeStaticMeshes(root) {
+  root.updateMatrixWorld(true);
+  const batches = new Map();
+  const staticMeshes = [];
+
+  root.traverse((object) => {
+    if (!object.isMesh || object.isInstancedMesh) return;
+    const material = object.material;
+    if (!material || Array.isArray(material)) return;
+    staticMeshes.push(object);
+    if (!batches.has(material.uuid)) {
+      batches.set(material.uuid, { material, geometries: [] });
+    }
+    const geometry = object.geometry.clone();
+    geometry.applyMatrix4(object.matrixWorld);
+    for (const name of Object.keys(geometry.attributes)) {
+      if (name !== "position" && name !== "normal" && name !== "uv") {
+        geometry.deleteAttribute(name);
+      }
+    }
+    batches.get(material.uuid).geometries.push(geometry);
+  });
+
+  for (const mesh of staticMeshes) {
+    mesh.parent?.remove(mesh);
+  }
+
+  const mergedGroup = new THREE.Group();
+  mergedGroup.name = "merged-static";
+
+  for (const { material, geometries } of batches.values()) {
+    if (geometries.length === 1) {
+      const mesh = new THREE.Mesh(geometries[0], material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mergedGroup.add(mesh);
+      continue;
+    }
+    const merged = mergeGeometries(geometries, false);
+    if (merged) {
+      const mesh = new THREE.Mesh(merged, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mergedGroup.add(mesh);
+      for (const geometry of geometries) geometry.dispose();
+    } else {
+      for (const geometry of geometries) {
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mergedGroup.add(mesh);
+      }
+    }
+  }
+
+  return mergedGroup;
 }

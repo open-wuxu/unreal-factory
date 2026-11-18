@@ -110,6 +110,8 @@ function bootstrap() {
   renderer.toneMappingExposure = 1.08;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
+  // 阴影只在焦点变化或影片帧推进时刷新，避免每帧重建 4096² 阴影图。
+  renderer.shadowMap.autoUpdate = false;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1b2836);
@@ -197,6 +199,7 @@ function bootstrap() {
   };
 
   const shadowFocus = controls.target.clone();
+  world.setShadowFocus(shadowFocus, 1400);
 
   function flyTo(view, duration = 1.7) {
     if (!view) return;
@@ -216,6 +219,10 @@ function bootstrap() {
     const t = easeInOutCubic(flight.elapsed / flight.duration);
     camera.position.lerpVectors(flight.fromPosition, flight.toPosition, t);
     controls.target.lerpVectors(flight.fromTarget, flight.toTarget, t);
+    const ground = heightAt(camera.position.x, camera.position.z);
+    if (camera.position.y < ground + 8) {
+      camera.position.y = ground + 8;
+    }
     camera.lookAt(controls.target);
     if (flight.elapsed >= flight.duration) {
       flight.active = false;
@@ -237,6 +244,7 @@ function bootstrap() {
     controls.enabled = true;
     flight.active = false;
     controls.autoRotate = false;
+    document.body.classList.remove("is-demo");
     ui.setPlaying(false);
     ui.setFreeMode(true);
     ui.setTime(film.time, FILM_DURATION);
@@ -246,6 +254,7 @@ function bootstrap() {
     mode = "demo";
     playing = true;
     controls.enabled = false;
+    document.body.classList.add("is-demo");
     ui.setFreeMode(false);
     ui.setPlaying(true);
     film.seek(film.time);
@@ -269,6 +278,7 @@ function bootstrap() {
     onReplay: () => {
       if (filmMode) return;
       mode = "demo";
+      document.body.classList.add("is-demo");
       playing = true;
       controls.enabled = false;
       ui.setFreeMode(false);
@@ -282,6 +292,7 @@ function bootstrap() {
     onSeek: (value) => {
       if (filmMode) return;
       mode = "demo";
+      document.body.classList.add("is-demo");
       playing = false;
       controls.enabled = false;
       ui.setFreeMode(false);
@@ -304,6 +315,7 @@ function bootstrap() {
   ui.setPlaying(true);
   ui.setView("overview");
   ui.setTime(0, FILM_DURATION);
+  document.body.classList.add("is-demo");
 
   /* 初始机位（自由浏览 URL） --------------------------------------- */
 
@@ -318,6 +330,7 @@ function bootstrap() {
       camera.position.set(x, heightAt(x, z) + 8, z);
       controls.target.set(0, 1520, 0);
       controls.update();
+      document.body.classList.remove("is-demo");
       ui.setFreeMode(true);
       ui.setPlaying(false);
       ui.setTime(0, FILM_DURATION);
@@ -329,6 +342,7 @@ function bootstrap() {
       controls.target.fromArray(CAMERA_VIEWS[viewName].target);
       controls.update();
       currentView = viewName;
+      document.body.classList.remove("is-demo");
       ui.setFreeMode(true);
       ui.setPlaying(false);
       ui.setView(viewName);
@@ -354,6 +368,7 @@ function bootstrap() {
       }
     } else if (event.code === "KeyR") {
       mode = "free";
+      document.body.classList.remove("is-demo");
       playing = false;
       controls.enabled = true;
       ui.setFreeMode(true);
@@ -363,7 +378,6 @@ function bootstrap() {
       flyTo(CAMERA_VIEWS.overview, 1.9);
     } else if (/^Digit[1-8]$/.test(event.code)) {
       const names = [
-        "overview",
         "tongtian",
         "longshou",
         "luoxia",
@@ -371,12 +385,14 @@ function bootstrap() {
         "dazhu",
         "xiaozhu",
         "chaoyang",
+        "overview",
       ];
       const name = names[Number(event.code.slice(-1)) - 1];
       if (name) {
         mode = "free";
         playing = false;
         controls.enabled = true;
+        document.body.classList.remove("is-demo");
         ui.setFreeMode(true);
         ui.setPlaying(false);
         setView(name);
@@ -476,6 +492,7 @@ function bootstrap() {
       renderer.setAnimationLoop(() => {
         const delta = Math.min(filmClock.getDelta(), 0.05);
         film.update(delta);
+        audio.update(film.time);
         if (!loadingHidden) {
           loadingHidden = true;
           hideLoading();
@@ -539,6 +556,7 @@ function bootstrap() {
     setDemo(time = 0) {
       mode = "demo";
       playing = true;
+      document.body.classList.add("is-demo");
       controls.enabled = false;
       ui.setFreeMode(false);
       ui.setPlaying(true);

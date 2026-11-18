@@ -464,13 +464,14 @@ export function createStaircase({
 
     if (surfaceAt) {
       // 沿山体表面铺台阶：每级是一块薄踏板，避免在陡崖上生成巨型方块。
-      addBox(group, materials.stone, {
+      const tread = addBox(group, materials.stone, {
         y: topY - 0.3,
         z,
         w: width,
         h: 0.6,
         d: stepDepth + 0.05,
       });
+      tread.userData.stairTread = true;
       for (const sx of [-1, 1]) {
         addBox(group, materials.darkStone, {
           x: (sx * width) / 2,
