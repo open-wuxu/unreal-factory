@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { PEAKS, WORLD } from "../src/config.js";
+import { PEAKS, SUN_KEYS, WORLD, sunDirectionAt } from "../src/config.js";
 import { heightAt, normalAt, peakHeightAt } from "../src/world/shape.js";
 import { seededRandom, fbm2 } from "../src/utils/noise.js";
 
@@ -36,4 +36,13 @@ for (let x = -1200; x < 1200; x += 6) {
   const b = heightAt(x + 6, 1200);
   assert.ok(Math.abs(a - b) < 400, `discontinuity at ${x}: ${a} -> ${b}`);
 }
+assert.equal(SUN_KEYS[0].t, 0);
+assert.equal(SUN_KEYS[SUN_KEYS.length - 1].t, 36);
+const sunStart = sunDirectionAt(0);
+const sunEnd = sunDirectionAt(36);
+assert.ok(Math.abs(sunStart.length() - 1) < 1e-3, "sun start unit");
+assert.ok(Math.abs(sunEnd.length() - 1) < 1e-3, "sun end unit");
+assert.ok(sunEnd.y < sunStart.y, "sun sets over the film");
+assert.ok(sunStart.x < 0, "sun in the west");
+
 console.log("core ok");
