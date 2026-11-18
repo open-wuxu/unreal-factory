@@ -11,6 +11,9 @@ import {
   createStaircase,
   createStele,
 } from "../src/world/buildings.js";
+import { PEAKS } from "../src/config.js";
+import { createPeaks } from "../src/world/peaks.js";
+import { heightAt } from "../src/world/shape.js";
 
 function countMeshes(group) {
   let count = 0;
@@ -81,5 +84,40 @@ const pieces = [
 ];
 
 for (const [name, group] of pieces) assertFinite(group, name);
+
+const scene = new THREE.Scene();
+const peaks = createPeaks(scene);
+assert.equal(Object.keys(peaks.complexes).length, PEAKS.length);
+
+for (const peak of PEAKS) {
+  const complex = peaks.complexes[peak.id];
+  assert.ok(complex, `${peak.id}: missing complex`);
+  assert.ok(
+    Math.abs(complex.plateauY - peak.height) < 1,
+    `${peak.id}: plateau height`,
+  );
+  assert.ok(
+    Math.abs(heightAt(complex.center.x, complex.center.z) - peak.height) < 6,
+    `${peak.id}: plateau does not match terrain`,
+  );
+
+  const peakGroup = peaks.group.children.find(
+    (child) => child.userData.peakId === peak.id,
+  );
+  assert.ok(peakGroup, `${peak.id}: missing peak group`);
+  peakGroup.updateMatrixWorld(true);
+
+  let buildings = 0;
+  for (const child of peakGroup.children) {
+    if (!child.isGroup || child.name === "staircase") continue;
+    buildings++;
+    const box = new THREE.Box3().setFromObject(child);
+    assert.ok(
+      box.min.y >= peak.height - 8,
+      `${peak.id}: building floats under the plateau (${box.min.y})`,
+    );
+  }
+  assert.ok(buildings >= 5, `${peak.id}: only ${buildings} buildings`);
+}
 
 console.log("buildings ok");

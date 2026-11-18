@@ -28,18 +28,25 @@ function buildRoofSurface(width, depth, height, overhang, upturn) {
   const positions = [];
   const uvs = [];
   const indices = [];
+  const halfWidth = width / 2 + overhang;
+  const halfDepth = depth / 2 + overhang;
+  const ridgeHalf = Math.max(0, halfWidth - halfDepth);
+
   for (let j = 0; j <= nz; j++) {
     const v = -1 + (2 * j) / nz;
     for (let i = 0; i <= nx; i++) {
       const u = -1 + (2 * i) / nx;
-      const edge = Math.max(Math.abs(u), Math.abs(v));
+      const x = u * halfWidth;
+      const z = v * halfDepth;
+      // 歇山顶：正脊沿 X 方向，脊外再向两端收坡。
+      const pastRidge = Math.max(0, Math.abs(x) - ridgeHalf);
+      const edge = Math.min(
+        1,
+        Math.max(Math.abs(z), pastRidge) / halfDepth,
+      );
       let y = height * (1 - Math.pow(edge, 1.35));
       y += upturn * Math.pow(Math.abs(u * v), 4) * 1.6;
-      positions.push(
-        u * (width / 2 + overhang),
-        y,
-        v * (depth / 2 + overhang),
-      );
+      positions.push(x, y, z);
       uvs.push(
         ((u + 1) / 2) * Math.max(1, width / 6),
         ((v + 1) / 2) * Math.max(1, depth / 6),
@@ -135,13 +142,23 @@ export function createRoof({
     surface.receiveShadow = true;
     group.add(surface);
 
-    const ridgeLength = Math.max(1, tierWidth - tierDepth * 0.72);
-    addBox(group, materials.roof, {
-      y: baseY + tierHeight + 0.35,
-      w: ridgeLength,
-      h: 0.7,
-      d: 0.75,
-    });
+    const ridgeLength = Math.max(0, tierWidth - tierDepth);
+    if (ridgeLength > 1.5) {
+      addBox(group, materials.roof, {
+        y: baseY + tierHeight + 0.3,
+        w: ridgeLength,
+        h: 0.6,
+        d: 0.7,
+      });
+    } else {
+      const finial = new THREE.Mesh(
+        new THREE.SphereGeometry(0.55, 10, 8),
+        materials.gold,
+      );
+      finial.position.y = baseY + tierHeight + 0.5;
+      finial.castShadow = true;
+      group.add(finial);
+    }
 
     for (const sx of [-1, 1]) {
       for (const sz of [-1, 1]) {
@@ -248,7 +265,7 @@ export function createHall({
     height: roofHeight,
     tiers,
     upturn: 0.72,
-    overhang: 2,
+    overhang: 3,
   });
   roof.position.y = floorY + height + 0.55;
   group.add(roof);
@@ -426,6 +443,7 @@ export function createStaircase({
   to = new THREE.Vector3(0, 0, 10),
   width = 4,
   risers = 10,
+  surfaceAt = null,
 } = {}) {
   const group = new THREE.Group();
   const materials = createMaterials();
@@ -440,20 +458,35 @@ export function createStaircase({
   group.rotation.y = Math.atan2(dx, dz);
 
   for (let i = 0; i < risers; i++) {
-    const height = stepRise * (i + 1);
-    addBox(group, materials.stone, {
-      y: height / 2,
-      z: stepDepth * (i + 0.5),
-      w: width,
-      h: height,
-      d: stepDepth + 0.04,
-    });
-    for (const sx of [-1, 1]) {
-      addBox(group, materials.darkStone, {
-        x: (sx * width) / 2,
-        y: height / 2,
-        z: stepDepth * (i + 0.5),
-        w: 0.35,
+    const z = stepDepth * (i + 0.5);
+    const fallbackTop = stepRise * (i + 1);
+    const topY = surfaceAt ? surfaceAt(z) : fallbackTop;
+
+    if (surfaceAt) {
+      // 沿山体表面铺台阶：每级是一块薄踏板，避免在陡崖上生成巨型方块。
+      addBox(group, materials.stone, {
+        y: topY - 0.3,
+        z,
+        w: width,
+        h: 0.6,
+        d: stepDepth + 0.05,
+      });
+      for (const sx of [-1, 1]) {
+        addBox(group, materials.darkStone, {
+          x: (sx * width) / 2,
+          y: topY + 0.55,
+          z,
+          w: 0.35,
+          h: 1.1,
+          d: stepDepth + 0.05,
+        });
+      }
+    } else {
+      const height = Math.max(0.4, fallbackTop);
+      addBox(group, materials.stone, {
+        y: topY - height / 2,
+        z,
+        w: width,
         h: height,
         d: stepDepth + 0.04,
       });

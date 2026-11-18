@@ -1,4 +1,5 @@
 import { createClouds } from "./clouds.js";
+import { createPeaks } from "./peaks.js";
 import { createSky } from "./sky.js";
 import { createTerrain } from "./terrain.js";
 
@@ -9,11 +10,13 @@ import { createTerrain } from "./terrain.js";
 export function createWorld(scene, camera, renderer) {
   const sky = createSky(scene, renderer);
   const terrain = createTerrain(scene);
+  const peaks = createPeaks(scene);
   const clouds = createClouds({ renderer, camera });
 
   function update(delta, elapsed, state) {
     void elapsed;
     sky.update(delta, state);
+    peaks.update(delta, state);
     clouds.update(delta, {
       time: state && state.time !== undefined ? state.time : undefined,
       sunDirection: sky.sunDirection,
@@ -29,6 +32,8 @@ export function createWorld(scene, camera, renderer) {
     update,
     setTime,
     terrain,
+    peaks,
+    complexes: peaks.complexes,
     sky,
     clouds,
     sunLight: sky.sunLight,

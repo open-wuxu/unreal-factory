@@ -104,7 +104,7 @@ export function createMaterials() {
       metalness: 0,
     }),
     roof: new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+      color: 0xd6dbe3,
       map: createRoofTileTexture(),
       roughness: 0.68,
       metalness: 0.08,

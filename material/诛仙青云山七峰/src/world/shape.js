@@ -29,6 +29,7 @@ const PEAK_DATA = PEAKS.map((peak, index) => {
     cos: Math.cos(peak.rotation),
     sin: Math.sin(peak.rotation),
     amplitude: peak.height - WORLD.valleyBase,
+    offset: 0,
     spurs,
   };
 });
@@ -59,7 +60,10 @@ function peakBody(peak, x, z) {
   // 宽大山脚：必须在峰体轮廓之外继续连续衰减，否则会在山脚
   // 留下一圈垂直断崖（表现为放射状竖条纹）。
   const skirt = 190 * Math.exp(-Math.pow(d / (peak.radius * 2.4), 2));
-  if (t <= 0) return { body: skirt, d };
+  // 峰高标定：把自然顶点压到配置高度，避免压平台地后形成火山口。
+  const offsetTerm =
+    peak.offset * Math.exp(-Math.pow(d / (peak.radius * 2.0), 2));
+  if (t <= 0) return { body: Math.max(0, skirt - offsetTerm), d };
 
   // 径向剖面：缓坡山脚 + 中段陡崖带 + 峰顶收束。
   const profile =
@@ -94,15 +98,36 @@ function peakBody(peak, x, z) {
   }
 
   body += skirt;
-  return { body: Math.max(0, body), d };
+  return { body: Math.max(0, body - offsetTerm), d };
+}
+
+function baseHeight(x, z) {
+  return (
+    WORLD.valleyBase +
+    70 * fbm2(x * 0.00016, z * 0.00016, 4, 3) +
+    235 * ridged2(x * 0.0008, z * 0.0008, 4, 29)
+  );
+}
+
+function rawHeightAt(x, z) {
+  let peakMax = 0;
+  let sum = 0;
+  for (const peak of PEAK_DATA) {
+    const { body } = peakBody(peak, x, z);
+    peakMax = Math.max(peakMax, body);
+    sum += body;
+  }
+  return baseHeight(x, z) + peakMax + 0.08 * Math.max(0, sum - peakMax);
+}
+
+// 迭代标定每座峰的自然顶点，使 heightAt(峰心) == 配置高度。
+for (let iteration = 0; iteration < 5; iteration++) {
+  for (const peak of PEAK_DATA) {
+    peak.offset += rawHeightAt(peak.x, peak.z) - peak.height;
+  }
 }
 
 export function heightAt(x, z) {
-  const base =
-    WORLD.valleyBase +
-    70 * fbm2(x * 0.00016, z * 0.00016, 4, 3) +
-    235 * ridged2(x * 0.0008, z * 0.0008, 4, 29);
-
   let peakMax = 0;
   let sum = 0;
   let nearest = PEAK_DATA[0];
@@ -119,12 +144,13 @@ export function heightAt(x, z) {
     }
   }
 
-  let height = base + peakMax + 0.08 * Math.max(0, sum - peakMax);
+  let height =
+    baseHeight(x, z) + peakMax + 0.08 * Math.max(0, sum - peakMax);
 
   const nearestDistance = nearestScore * nearest.plateau;
   const detailWeight = smoothstep(
     nearest.plateau * 0.6,
-    nearest.plateau * 2.4,
+    nearest.plateau * 1.8,
     nearestDistance,
   );
   if (detailWeight > 0) {
@@ -149,7 +175,7 @@ export function heightAt(x, z) {
     1 -
     smoothstep(
       nearest.plateau,
-      nearest.plateau * 1.6,
+      nearest.plateau * 2.4,
       nearestDistance,
     );
   if (plateauWeight > 0) {

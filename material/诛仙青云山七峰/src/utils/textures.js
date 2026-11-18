@@ -110,17 +110,17 @@ export function createRoofTileTexture() {
     "roof-tile",
     256,
     (context, size) => {
-      context.fillStyle = "#2b3038";
+      context.fillStyle = "#3c424c";
       context.fillRect(0, 0, size, size);
       const rowHeight = 16;
       const tileWidth = 20;
       for (let row = 0; row < size / rowHeight; row++) {
         const y = row * rowHeight;
-        context.fillStyle = row % 2 === 0 ? "#343a44" : "#2f353e";
+        context.fillStyle = row % 2 === 0 ? "#525a67" : "#4a525e";
         context.fillRect(0, y, size, rowHeight - 2);
-        context.fillStyle = "#1c2027";
+        context.fillStyle = "#2b313a";
         context.fillRect(0, y + rowHeight - 2, size, 2);
-        context.fillStyle = "#4a525f";
+        context.fillStyle = "#77808f";
         for (let x = (row % 2) * (tileWidth / 2); x < size; x += tileWidth) {
           context.fillRect(x, y + 2, 2, rowHeight - 4);
         }
