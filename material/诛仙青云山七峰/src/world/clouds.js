@@ -57,7 +57,7 @@ const MARCH_FRAGMENT = /* glsl */ `
 
   float heightDensity(float y) {
     float main = exp(-pow((y - 900.0) / 105.0, 2.0));
-    float band = 0.16 * exp(-pow((y - 1320.0) / 150.0, 2.0));
+    float band = 0.07 * exp(-pow((y - 1320.0) / 150.0, 2.0));
     return main + band;
   }
 

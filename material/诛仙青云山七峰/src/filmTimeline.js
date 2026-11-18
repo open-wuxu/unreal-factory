@@ -53,8 +53,8 @@ export const FILM_SHOTS = [
     end: 29,
     subtitle: "龙首垂瀑，风回千仞",
     keys: [
-      { t: 22, position: V(-2700, 1200, 700), target: V(-3070, 1150, 450) },
-      { t: 25, position: V(-2820, 1280, 680), target: V(-3070, 1200, 450) },
+      { t: 22, position: V(-2700, 1200, 700), target: V(-3070, 1180, 450) },
+      { t: 25, position: V(-2760, 1240, 710), target: V(-3070, 1200, 450) },
       { t: 29, position: V(-2200, 1950, 700), target: V(-250, 1520, -2800) },
     ],
   },
