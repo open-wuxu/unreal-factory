@@ -6,8 +6,8 @@
 
 | 文件 | 规格 |
 | --- | --- |
-| `deliverables/qingyun-seven-peaks-2k60.mp4` | 2560×1440 / 60 fps / 36.000 s / 2160 帧 / H.264 High / AAC 192 kbps / 65.5 Mbps / 281 MiB / −18.0 LUFS（TP −10.3 dBTP，LRA 3.2） |
-| `deliverables/qingyun-seven-peaks-2k60-silent.mp4` | 同上，无音轨，280.3 MiB，供重新配乐 |
+| `deliverables/qingyun-seven-peaks-2k60.mp4` | 2560×1440 / 60 fps / 36.000 s / 2160 帧 / H.264 High / AAC 192 kbps / 67.0 Mbps / 287.4 MiB / −18.0 LUFS（TP −10.3 dBTP，LRA 3.2） |
+| `deliverables/qingyun-seven-peaks-2k60-silent.mp4` | 同上，无音轨，286.5 MiB，供重新配乐 |
 | `deliverables/qingyun-score.wav` | 48 kHz / 立体声 / 36.0 s / loudnorm 目标 −18 LUFS |
 | `deliverables/previews/01–07-*.png` | 七张 2560×1440 关键镜头截图 |
 | `deliverables/frames/` | 2160 帧 JPEG 序列 + manifest.json（gitignore，可重新生成） |
