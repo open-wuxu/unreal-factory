@@ -40,9 +40,14 @@ export function createWorld(scene, camera, renderer) {
     sky.setTime(t);
   }
 
+  function setShadowFocus(point, extent) {
+    sky.setShadowFocus(point, extent);
+  }
+
   return {
     update,
     setTime,
+    setShadowFocus,
     terrain,
     peaks,
     complexes: peaks.complexes,

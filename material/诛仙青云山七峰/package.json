@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-core.mjs && node scripts/test-buildings.mjs && node scripts/test-vegetation.mjs && node scripts/test-water.mjs"
+    "test": "node scripts/test-core.mjs && node scripts/test-buildings.mjs && node scripts/test-vegetation.mjs && node scripts/test-water.mjs",
+    "test:interactions": "node scripts/test-interactions.mjs"
   },
   "dependencies": {
     "three": "0.186.0"

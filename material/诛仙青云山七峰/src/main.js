@@ -12,6 +12,7 @@ import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { ATMOSPHERE, CAMERA_VIEWS } from "./config.js";
 import { createWorld } from "./world/index.js";
 import { heightAt } from "./world/shape.js";
+import { createUI, hideLoading, showFallback } from "./ui.js";
 
 const GradeShader = {
   uniforms: {
@@ -79,11 +80,8 @@ function supportsWebGL2() {
   }
 }
 
-function showFallback() {
-  const loading = document.getElementById("loading");
-  const fallback = document.getElementById("fallback");
-  if (loading) loading.style.display = "none";
-  if (fallback) fallback.hidden = false;
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function bootstrap() {
@@ -122,9 +120,14 @@ function bootstrap() {
   controls.target.fromArray(overview.target);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
-  controls.minDistance = 20;
+  controls.rotateSpeed = 0.55;
+  controls.zoomSpeed = 0.8;
+  controls.panSpeed = 0.7;
+  controls.minDistance = 40;
   controls.maxDistance = 22000;
   controls.maxPolarAngle = Math.PI * 0.495;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.16;
   controls.update();
 
   const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
@@ -158,35 +161,227 @@ function bootstrap() {
   const smaaPass = new SMAAPass(window.innerWidth, window.innerHeight);
   composer.addPass(smaaPass);
 
+  /* 状态 ------------------------------------------------------------ */
+
+  let mode = "demo"; // demo | free
+  let playing = true;
+  let currentView = "overview";
+
+  const flight = {
+    active: false,
+    elapsed: 0,
+    duration: 1.7,
+    fromPosition: new THREE.Vector3(),
+    fromTarget: new THREE.Vector3(),
+    toPosition: new THREE.Vector3(),
+    toTarget: new THREE.Vector3(),
+  };
+
+  const shadowFocus = controls.target.clone();
+  world.setShadowFocus(shadowFocus, 1400);
+
+  function flyTo(view, duration = 1.7) {
+    if (!view) return;
+    flight.fromPosition.copy(camera.position);
+    flight.fromTarget.copy(controls.target);
+    flight.toPosition.fromArray(view.position);
+    flight.toTarget.fromArray(view.target);
+    flight.elapsed = 0;
+    flight.duration = duration;
+    flight.active = true;
+    controls.autoRotate = false;
+    world.setShadowFocus(flight.toTarget, 1500);
+  }
+
+  function updateFlight(delta) {
+    if (!flight.active) return;
+    flight.elapsed = Math.min(flight.duration, flight.elapsed + delta);
+    const t = easeInOutCubic(flight.elapsed / flight.duration);
+    camera.position.lerpVectors(flight.fromPosition, flight.toPosition, t);
+    controls.target.lerpVectors(flight.fromTarget, flight.toTarget, t);
+    camera.lookAt(controls.target);
+    if (flight.elapsed >= flight.duration) {
+      flight.active = false;
+      controls.autoRotate = mode === "demo";
+      controls.update();
+    }
+  }
+
+  function setView(name) {
+    const view = CAMERA_VIEWS[name];
+    if (!view) return;
+    currentView = name;
+    flyTo(view);
+  }
+
+  function enterFreeMode() {
+    if (mode === "free") return;
+    mode = "free";
+    playing = false;
+    controls.autoRotate = false;
+    ui.setPlaying(false);
+    ui.setFreeMode(true);
+  }
+
+  const ui = createUI({
+    onView: (name) => {
+      if (mode !== "demo") {
+        mode = "demo";
+        ui.setFreeMode(false);
+      }
+      setView(name);
+      ui.setView(name);
+    },
+    onPlayToggle: () => {
+      if (mode === "free") {
+        mode = "demo";
+        playing = true;
+        ui.setFreeMode(false);
+        controls.autoRotate = true;
+      } else {
+        playing = !playing;
+        controls.autoRotate = playing;
+      }
+      ui.setPlaying(playing);
+    },
+    onReplay: () => {
+      mode = "demo";
+      playing = true;
+      ui.setFreeMode(false);
+      ui.setPlaying(true);
+      ui.setView("overview");
+      currentView = "overview";
+      flyTo(CAMERA_VIEWS.overview, 1.9);
+    },
+    onSeek: () => {
+      // 影片时间线在后续任务接入；自由浏览下不改变画面。
+    },
+    onToggle: (key, value) => {
+      if (key === "clouds") world.clouds.setEnabled(value);
+      else if (key === "mist") world.mist.setEnabled(value);
+      else if (key === "subtitles") {
+        document.body.classList.toggle("subtitles-off", !value);
+      }
+    },
+  });
+
+  ui.setPlaying(true);
+  ui.setView("overview");
+  ui.setTime(0, 36);
+
+  /* 初始机位 -------------------------------------------------------- */
+
   const params = new URLSearchParams(window.location.search);
   const viewName = params.get("view");
   if (viewName === "ground") {
     const x = -1100;
     const z = 1400;
-    camera.position.set(x, heightAt(x, z) + 6, z);
+    camera.position.set(x, heightAt(x, z) + 8, z);
     controls.target.set(0, 1520, 0);
+    controls.autoRotate = false;
     controls.update();
   } else if (CAMERA_VIEWS[viewName]) {
     camera.position.fromArray(CAMERA_VIEWS[viewName].position);
     controls.target.fromArray(CAMERA_VIEWS[viewName].target);
     controls.update();
+    currentView = viewName;
+    ui.setView(viewName);
   }
+
+  /* 交互 ------------------------------------------------------------ */
+
+  renderer.domElement.addEventListener("pointerdown", enterFreeMode);
+  renderer.domElement.addEventListener("wheel", enterFreeMode, {
+    passive: true,
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (mode === "free") {
+        mode = "demo";
+        playing = true;
+        ui.setFreeMode(false);
+        controls.autoRotate = true;
+        ui.setPlaying(true);
+      } else {
+        playing = !playing;
+        controls.autoRotate = playing;
+        ui.setPlaying(playing);
+      }
+    } else if (event.code === "KeyR") {
+      mode = "demo";
+      playing = true;
+      ui.setFreeMode(false);
+      ui.setPlaying(true);
+      ui.setView("overview");
+      currentView = "overview";
+      flyTo(CAMERA_VIEWS.overview, 1.9);
+    } else if (/^Digit[1-8]$/.test(event.code)) {
+      const names = [
+        "overview",
+        "tongtian",
+        "longshou",
+        "luoxia",
+        "fenghui",
+        "dazhu",
+        "xiaozhu",
+        "chaoyang",
+      ];
+      const name = names[Number(event.code.slice(-1)) - 1];
+      if (name) {
+        mode = "demo";
+        playing = true;
+        ui.setFreeMode(false);
+        ui.setPlaying(true);
+        setView(name);
+        ui.setView(name);
+      }
+    }
+  });
+
+  /* 主循环 ---------------------------------------------------------- */
 
   const clock = new THREE.Clock();
   let firstFrame = true;
+  let shadowClock = 0;
+
+  function updateCamera(delta) {
+    if (flight.active) {
+      updateFlight(delta);
+    } else {
+      controls.update(delta);
+      const ground = heightAt(camera.position.x, camera.position.z);
+      if (camera.position.y < ground + 8) {
+        camera.position.y = ground + 8;
+        camera.lookAt(controls.target);
+      }
+    }
+
+    shadowClock += delta;
+    if (
+      shadowClock > 0.6 ||
+      controls.target.distanceToSquared(shadowFocus) > 150 * 150
+    ) {
+      shadowClock = 0;
+      shadowFocus.copy(controls.target);
+      world.setShadowFocus(shadowFocus, 1400);
+    }
+  }
 
   function animate() {
     const delta = Math.min(clock.getDelta(), 0.05);
     const elapsed = clock.elapsedTime;
-    controls.update(delta);
+
+    updateCamera(delta);
     world.update(delta, elapsed, { time: elapsed });
     gradePass.uniforms.uTime.value = elapsed;
     composer.render();
 
     if (firstFrame) {
       firstFrame = false;
-      const loading = document.getElementById("loading");
-      if (loading) loading.style.display = "none";
+      hideLoading();
+      ui.setTime(0, 36);
     }
   }
 
@@ -207,9 +402,37 @@ function bootstrap() {
     controls,
     composer,
     world,
+    ui,
     bloomPass,
     gradePass,
     smaaPass,
+    flyTo,
+    flight,
+    get mode() {
+      return mode;
+    },
+    get playing() {
+      return playing;
+    },
+    get currentView() {
+      return currentView;
+    },
+    setView(position, target) {
+      mode = "free";
+      playing = false;
+      flight.active = false;
+      controls.autoRotate = false;
+      controls.enabled = true;
+      camera.position.fromArray(position);
+      controls.target.fromArray(target);
+      controls.update();
+      ui.setFreeMode(true);
+      ui.setPlaying(false);
+    },
+    setShadowFocus(point, extent = 1400) {
+      shadowFocus.copy(point);
+      world.setShadowFocus(shadowFocus, extent);
+    },
   };
 }
 

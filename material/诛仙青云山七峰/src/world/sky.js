@@ -185,7 +185,7 @@ export function createSky(scene, renderer) {
   let environment = null;
   let envTime = -999;
   const sunDirection = new THREE.Vector3();
-  const lightOffset = new THREE.Vector3(0, 900, 0);
+  const shadowFocus = new THREE.Vector3(0, 900, 0);
   let state = sampleKeys(0);
 
   function regenerateEnvironment(t, force = false) {
@@ -220,8 +220,8 @@ export function createSky(scene, renderer) {
 
     sunLight.color.copy(state.colors.color);
     sunLight.intensity = state.intensity;
-    sunLight.position.copy(sunDirection).multiplyScalar(6000).add(lightOffset);
-    sunLight.target.position.copy(lightOffset);
+    sunLight.position.copy(sunDirection).multiplyScalar(6000).add(shadowFocus);
+    sunLight.target.position.copy(shadowFocus);
     sunLight.target.updateMatrixWorld();
 
     hemiLight.color.copy(state.colors.skyTop).lerp(state.colors.skyHorizon, 0.5);
@@ -233,6 +233,22 @@ export function createSky(scene, renderer) {
     renderer.toneMappingExposure = state.exposure;
 
     regenerateEnvironment(t);
+  }
+
+  function setShadowFocus(point, extent = 1500) {
+    shadowFocus.copy(point);
+    const camera = sunLight.shadow.camera;
+    camera.left = -extent;
+    camera.right = extent;
+    camera.top = extent;
+    camera.bottom = -extent;
+    camera.near = 100;
+    camera.far = 16000;
+    camera.updateProjectionMatrix();
+    sunLight.position.copy(sunDirection).multiplyScalar(6000).add(shadowFocus);
+    sunLight.target.position.copy(shadowFocus);
+    sunLight.target.updateMatrixWorld();
+    sunLight.shadow.needsUpdate = true;
   }
 
   function update(delta, stateIn) {
@@ -250,6 +266,7 @@ export function createSky(scene, renderer) {
     hemiLight,
     ambientLight,
     setTime,
+    setShadowFocus,
     update,
     get sunDirection() {
       return sunDirection;
