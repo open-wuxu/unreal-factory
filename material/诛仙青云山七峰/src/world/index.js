@@ -1,5 +1,8 @@
+import { createBirds } from "./birds.js";
 import { createClouds } from "./clouds.js";
+import { createMist } from "./mist.js";
 import { createPeaks } from "./peaks.js";
+import { createWater } from "./water.js";
 import { createSky } from "./sky.js";
 import { createTerrain } from "./terrain.js";
 import { createVegetation } from "./vegetation.js";
@@ -13,6 +16,9 @@ export function createWorld(scene, camera, renderer) {
   const terrain = createTerrain(scene);
   const peaks = createPeaks(scene);
   const vegetation = createVegetation(scene);
+  const water = createWater(scene);
+  const mist = createMist(scene);
+  const birds = createBirds(scene);
   const clouds = createClouds({ renderer, camera });
 
   function update(delta, elapsed, state) {
@@ -20,6 +26,9 @@ export function createWorld(scene, camera, renderer) {
     sky.update(delta, state);
     peaks.update(delta, state);
     vegetation.update(delta, state);
+    water.update(delta, state);
+    mist.update(delta, state);
+    birds.update(delta, state);
     clouds.update(delta, {
       time: state && state.time !== undefined ? state.time : undefined,
       sunDirection: sky.sunDirection,
@@ -38,6 +47,9 @@ export function createWorld(scene, camera, renderer) {
     peaks,
     complexes: peaks.complexes,
     vegetation,
+    water,
+    mist,
+    birds,
     sky,
     clouds,
     sunLight: sky.sunLight,

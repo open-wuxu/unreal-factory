@@ -291,6 +291,57 @@ export function createBambooLeafTexture() {
   );
 }
 
+/** 软雾团：用于贴谷雾片的透明度贴图。 */
+export function createMistTexture() {
+  return canvasTexture(
+    "mist-sheet",
+    256,
+    (context, size) => {
+      context.clearRect(0, 0, size, size);
+      const random = seededRandom(5511);
+      for (let i = 0; i < 44; i++) {
+        const x = random() * size;
+        const y = random() * size;
+        const radius = 18 + random() * 60;
+        const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, "rgba(255,255,255,0.16)");
+        gradient.addColorStop(0.5, "rgba(255,255,255,0.07)");
+        gradient.addColorStop(1, "rgba(255,255,255,0)");
+        context.fillStyle = gradient;
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fill();
+      }
+    },
+    { srgb: true },
+  );
+}
+
+/** 水雾光点：瀑布底部的喷溅。 */
+export function createSprayTexture() {
+  return canvasTexture(
+    "spray",
+    128,
+    (context, size) => {
+      context.clearRect(0, 0, size, size);
+      const gradient = context.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size / 2,
+      );
+      gradient.addColorStop(0, "rgba(255,255,255,0.85)");
+      gradient.addColorStop(0.45, "rgba(255,255,255,0.35)");
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, size, size);
+    },
+    { srgb: true },
+  );
+}
+
 /** 草叶：透明底上的几根细草。 */
 export function createGrassBladeTexture() {
   return canvasTexture(
