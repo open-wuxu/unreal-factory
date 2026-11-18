@@ -10,6 +10,7 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 
 import { ATMOSPHERE, CAMERA_VIEWS } from "./config.js";
+import { createAudio } from "./audio.js";
 import { createFilm } from "./film.js";
 import { FILM_DURATION, FILM_FPS } from "./filmTimeline.js";
 import { createWorld } from "./world/index.js";
@@ -183,6 +184,8 @@ function bootstrap() {
     },
   });
 
+  const audio = createAudio();
+
   const flight = {
     active: false,
     elapsed: 0,
@@ -292,6 +295,8 @@ function bootstrap() {
       else if (key === "mist") world.mist.setEnabled(value);
       else if (key === "subtitles") {
         document.body.classList.toggle("subtitles-off", !value);
+      } else if (key === "sound") {
+        audio.setEnabled(value);
       }
     },
   });
@@ -415,6 +420,7 @@ function bootstrap() {
     if (mode === "demo") {
       if (playing) film.update(delta);
       else film.renderFrame(film.time);
+      audio.update(film.time);
       ui.setTime(film.time, FILM_DURATION);
     } else {
       updateFreeCamera(delta);
@@ -441,7 +447,7 @@ function bootstrap() {
     const soundButton = document.getElementById("film-sound");
     if (soundButton) {
       soundButton.addEventListener("click", () => {
-        const enabled = soundButton.getAttribute("aria-pressed") !== "true";
+        const enabled = audio.toggle();
         soundButton.setAttribute("aria-pressed", String(enabled));
         soundButton.textContent = enabled ? "声音 · 开" : "声音 · 关";
       });
@@ -497,6 +503,7 @@ function bootstrap() {
     world,
     ui,
     film,
+    audio,
     filmMode,
     captureMode,
     bloomPass,
