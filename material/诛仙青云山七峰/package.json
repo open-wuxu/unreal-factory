@@ -13,7 +13,8 @@
     "verify:scene": "node scripts/verify-scene.mjs",
     "export:film": "node scripts/export-film.mjs",
     "encode:film": "node scripts/encode-film.mjs",
-    "stills:film": "node scripts/capture-stills.mjs"
+    "stills:film": "node scripts/capture-stills.mjs",
+    "score": "python3 scripts/compose-score.py"
   },
   "dependencies": {
     "three": "0.186.0"

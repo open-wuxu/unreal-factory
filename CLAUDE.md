@@ -211,6 +211,23 @@ world / film / audio / flyTo / setView / setDemo`）。影片导出流程：
 封装命令见 `material/枫桥夜泊/deliverables/REPORT.md`。
 `deliverables/` 被根 `.gitignore` 忽略，成片、配乐与帧序列都不入库。
 
+## 诛仙 · 青云山七峰（独立 Three.js 项目）
+
+`material/诛仙青云山七峰/` 是一个独立的 Vite + Three.js 项目：36 秒五镜头仙侠短片
+与可漫游场景，提示词在 `prompt/诛仙青云山七峰.md`。
+
+场景基准：谷地 420 m，七峰 1170–1790 m，云海 740–1080 m（山腰云带 1320 m）。
+地形唯一真值是 `src/world/shape.js` 的 `heightAt(x, z)`；网格、植被、建筑、相机碰撞
+全部查询它。修改峰形、云层高度或太阳关键帧后必须重新导出成片。
+
+影片时间线是纯函数 `src/filmTimeline.js`：0–8 云海初开、8–15 通天玉阶、
+15–22 竹影双峰、22–29 龙首垂瀑、29–36 落霞满袖；切点用 0.8 秒穿云白场。
+渲染链：`RenderPass → 体积云 Pass（world/clouds.js）→ Bloom → Grade → OutputPass → SMAA`。
+主渲染目标必须带 `DepthTexture` 且不能开 MSAA，否则云 Pass 读不到场景深度。
+
+调试入口 `window.__qingyun`；`?film=1&capture=1` 下暴露 `window.__capture.renderAt(t)`。
+导出命令见 `material/诛仙青云山七峰/README.md`。
+
 ## 授权
 
 代码可直接用于学习与二次创作；Three.js 采用 MIT 许可。
