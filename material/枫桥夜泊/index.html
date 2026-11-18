@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="枫桥夜泊 · 完全程序化生成的 Three.js 江南深秋夜景：枫桥、江枫、渔火、客船与寒山寺，40 秒电影式三维诗词短片。"
+    />
+    <title>枫桥夜泊 · 江南深秋夜</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23070b12'/><circle cx='22' cy='9' r='4' fill='%23b7c9de'/><path d='M5 25c4-1 7-4 8-8 2 3 5 5 9 5-4 2-9 3-17 3z' fill='%238b302e'/></svg>"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene"></canvas>
+
+      <!-- 交互界面 --------------------------------------------------- -->
+      <div class="ui" id="ui">
+        <header class="masthead">
+          <div class="brand">
+            <span class="brand-en">A NIGHT MOORING BY MAPLE BRIDGE</span>
+            <span class="brand-cn">枫桥夜泊</span>
+            <span class="brand-author">唐 · 张继</span>
+          </div>
+          <a class="film-link" href="?film=1" aria-label="观看 40 秒影片">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.2" />
+              <path d="M10 8.6l6 3.4-6 3.4z" class="fill" />
+            </svg>
+            <span>观看影片</span>
+            <span class="film-link-time">40 s</span>
+          </a>
+        </header>
+
+        <aside class="views" aria-label="取景导航">
+          <p class="panel-title">取景</p>
+          <button class="view" data-view="overview"><span class="dot"></span>全景</button>
+          <button class="view" data-view="bridge"><span class="dot"></span>枫桥</button>
+          <button class="view" data-view="maples"><span class="dot"></span>江枫</button>
+          <button class="view" data-view="boat"><span class="dot"></span>客船</button>
+          <button class="view" data-view="temple"><span class="dot"></span>寒山寺</button>
+          <button class="view" data-view="water"><span class="dot"></span>江面</button>
+        </aside>
+
+        <div class="toolbar">
+          <div class="transport">
+            <button class="transport-button primary" id="play" aria-pressed="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-play">
+                <path d="M8 5.5l10 6.5-10 6.5z" class="fill" />
+              </svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-pause">
+                <path d="M8.5 6v12M15.5 6v12" />
+              </svg>
+              <span id="play-label">暂停</span>
+            </button>
+            <button class="transport-button" id="replay">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5" />
+              </svg>
+              重播
+            </button>
+            <div class="timeline">
+              <input
+                id="timeline"
+                type="range"
+                min="0"
+                max="40"
+                step="0.05"
+                value="0"
+                aria-label="影片时间轴"
+              />
+              <span class="time-label" id="time-label">00:00 / 00:40</span>
+            </div>
+          </div>
+
+          <div class="toggles">
+            <button class="toggle" data-toggle="mist" aria-pressed="true">
+              <span class="toggle-dot"></span>雾气
+            </button>
+            <button class="toggle" data-toggle="subtitles" aria-pressed="true">
+              <span class="toggle-dot"></span>字幕
+            </button>
+            <button class="toggle" data-toggle="sound" aria-pressed="false">
+              <span class="toggle-dot"></span>声音
+            </button>
+            <button class="view-reset" id="reset-view">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v4.5h4.5" />
+              </svg>
+              重置视角
+            </button>
+          </div>
+        </div>
+
+        <p class="hint">
+          拖拽旋转 · 滚轮缩放 · 右键平移 · 空格播放/暂停 · 拖动时间轴回到任意镜头
+        </p>
+      </div>
+
+      <!-- 影片字幕 --------------------------------------------------- -->
+      <div class="film" id="film" aria-hidden="true">
+        <div class="film-vignette"></div>
+        <div class="film-scrim"></div>
+
+        <div class="film-intro" data-film="intro">
+          <p class="film-kicker">A NIGHT MOORING BY MAPLE BRIDGE</p>
+          <h1 class="film-title">枫桥夜泊</h1>
+          <p class="film-author">唐 · 张继</p>
+        </div>
+
+        <p class="film-line" data-film="line1">月落乌啼霜满天</p>
+        <p class="film-line" data-film="line2">江枫渔火对愁眠</p>
+        <p class="film-line" data-film="line3">姑苏城外寒山寺</p>
+        <p class="film-line" data-film="line4">夜半钟声到客船</p>
+
+        <div class="film-end" data-film="end">
+          <div class="film-poem">
+            <p class="poem-title">枫桥夜泊</p>
+            <p class="poem-author">唐 · 张继</p>
+            <p>月落乌啼霜满天</p>
+            <p>江枫渔火对愁眠</p>
+            <p>姑苏城外寒山寺</p>
+            <p>夜半钟声到客船</p>
+          </div>
+          <p class="film-credit">全部几何、贴图与声音由代码生成 · Three.js</p>
+        </div>
+
+        <a class="film-back" href="./" aria-label="返回交互场景">← 返回</a>
+        <button class="film-sound" id="film-sound" aria-pressed="false">
+          声音 · 关
+        </button>
+
+        <div class="film-fade" data-film="fade"></div>
+      </div>
+
+      <!-- 加载与回退 ------------------------------------------------- -->
+      <div class="loading" id="loading">
+        <div class="loading-mark">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p class="loading-title">枫桥夜泊</p>
+        <p class="loading-sub">正在生成江南深秋夜色</p>
+        <div class="loading-bar"><i id="loading-progress"></i></div>
+      </div>
+
+      <div class="fallback" id="fallback" hidden>
+        <p>当前浏览器无法启动 WebGL 2。</p>
+        <p>请使用最新版 Chrome、Edge、Firefox 或 Safari 桌面浏览器打开。</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -5,16 +5,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 项目性质
 
 仓库名 `unreal_factory` **不是 Unreal Engine 项目**，与 Unreal Engine 没有任何关系。
-这里是一组完全程序化生成、可交互的 Three.js 城市景观素材，`material/` 下每个版本都是
+这里是一组完全程序化生成、可交互的 Three.js 三维场景素材，`material/` 下每个目录都是
 独立的 Vite 前端项目，根目录没有 `package.json`。
 
-- `material/上海外滩v2.0/` — 当前主版本（U 形江湾 + 陆家嘴半岛），新工作默认在这里进行。
+- `material/上海外滩v2.0/` — 外滩当前主版本（U 形江湾 + 陆家嘴半岛），新工作默认在这里进行。
 - `material/上海外滩v1.0/` — 直线河道的存档版本，仅作参考；除非明确要求，不要同步修改。
+- `material/上海外滩v3.0/` — 真实地理数据版，**源码在 `feat/shanghai-bund-v3` 分支**；
+  master 下的同名目录只有本地构建产物，没有源码。详见「上海外滩 v3.0」一节。
+- `material/枫桥夜泊/` — 独立的《枫桥夜泊》三维诗词短片项目，详见后文。
 - 代码中出现的 `UnrealBloomPass` 是 three.js 自带的后处理通道，同样与 Unreal Engine 无关。
+
+## 文档与提示词
+
+- `prompt/*.md` — 各项目的原始需求提示词（`上海外滩v1.0` / `v2.0` / `v3.0`、`枫桥夜泊`）。
+  改动场景定位（真实地理比例、镜头安排、交付物）前先对照对应提示词。
+- `docs/superpowers/specs|plans/` — 项目的设计与实施计划。v3.0 的 spec/plan 在
+  `feat/shanghai-bund-v3` 分支上；master 里目前只有《诛仙·青云山七峰》的文档
+  （分支 `feat/qingyun-seven-peaks`，独立 worktree 在 `.claude/worktrees/`）。
+- `.superpowers/sdd/` — 子代理执行台账，本地文件，整体被忽略。
 
 ## 常用命令
 
-每个版本目录独立安装、独立运行，命令不能从仓库根目录执行：
+每个项目目录独立安装、独立运行，命令不能从仓库根目录执行：
 
 ```bash
 cd material/上海外滩v2.0
@@ -25,13 +37,14 @@ npm run build     # 产物输出到 dist/，base 为 "./"，可部署到任意�
 npm run preview   # 本地预览构建产物
 ```
 
-v1.0 的命令相同，只需替换目录名。
+v1.0 的命令相同，只需替换目录名。`material/枫桥夜泊` 另有 `export:film` /
+`encode:film` / `stills:film` / `score` 脚本，见后文「枫桥夜泊」一节。
 
 - 环境要求：Node.js ≥ 20.19（Vite 7），支持 WebGL 2 的桌面浏览器。
 - 没有测试、lint 或类型检查脚本。验证改动的方式是 `npm run build` 通过，
   再在浏览器里实际查看场景（`npm run dev`）。
 
-## 架构
+## 架构（上海外滩 v2.0）
 
 ### 启动链路
 
@@ -140,6 +153,63 @@ composer.render();
 v1.0 与 v2.0 完全独立，各自带 `package.json`、`vite.config.js` 和 `.gitignore`。
 `river.js` 只存在于 v2.0；v2 的 `city.js`、`bund.js`、`boats.js` 等都已改为沿河道生成，
 修改时不要假设 v1 的实现可以照搬。
+v3.0 同样独立，且不复用 v2 的 `river.js`：v2 的河道是艺术化的 `CatmullRomCurve3` 曲线，
+v3 的岸线来自 OSM 真实数据，两者的几何来源与坐标基准都不同。
+`枫桥夜泊` 与三个外滩版本无关，独立演进。
+
+## 上海外滩 v3.0（进行中，源码在功能分支）
+
+方向是真实地理数据驱动的 1:1 场景：OSM 岸线 / 道路 / 建筑轮廓，3D-GloBFP 建筑高度，
+Copernicus DEM 地形，WGS84 → 局部 ENU 投影，1 世界单位 = 1 米。需求见
+`prompt/上海外滩v3.0.md`；spec 与 22 个任务的实施计划在 `feat/shanghai-bund-v3`
+分支的 `docs/superpowers/` 下。
+
+- **状态**：2026-11-05 完成 Task 1（脚手架、Playwright 冒烟、构建）后由用户暂停，
+  Task 2–22 的 brief 已预生成在 `.superpowers/sdd/2026-11-05-shanghai-bund-v3/`。
+- **master 工作区的 `material/上海外滩v3.0/` 没有源码**，只有被根 `.gitignore` 忽略的
+  `dist/`、`node_modules/` 与 `test-results/`。不要从 `dist/` 反推实现，也不要把它
+  当成已有项目继续开发。
+- 恢复开发：`git switch feat/shanghai-bund-v3`，先读该目录的台账 `progress.md`。
+
+## 枫桥夜泊（独立 Three.js 项目）
+
+`material/枫桥夜泊/` 不是外滩版本，而是一个独立的 Vite + Three.js 项目：
+40 秒、60 fps 的《枫桥夜泊》三维诗词短片与可漫游场景。它有自己的
+`package.json`、`vite.config.js`、`.gitignore`、`README.md` 与导出脚本，
+命令与外滩项目相同（`npm install` / `npm run dev` / `npm run build`）。
+
+场景基准：河道沿 X 轴，南岸 z > 34 是枫桥、枫林、码头与客船；北岸 z < -34
+是寒山寺山坡；月亮压在西北天际线附近。主要模块在 `src/world/`：`terrain.js`
+（江岸/远山/码头）、`bridge.js`、`trees.js`、`boat.js`、`temple.js`、`fishing.js`、
+`birds.js`、`mist.js`、`water.js`、`sky.js`。`src/config.js` 集中存放色彩、
+水平基准、关键坐标和导航机位。
+
+时间线在 `src/film.js`：0–7 s 月落江天、7–16 s 江枫渔火、16–26 s 寒山寺、
+26–35 s 夜半钟声、35–40 s 回到客船并拉远。34.6–35.4 s 是黑场过渡，遮住钟楼到
+客船的切镜；`FINALE_KEYS` 与 `KEYS` 是两段独立的相机曲线。
+
+渲染注意：
+- **不要把 `renderer.shadowMap.autoUpdate` 设为 false 而不在首帧前初始化阴影贴图。**
+  本项目曾因首帧没有阴影贴图导致所有 `MeshStandardMaterial` 采样
+  `sampler2DShadow` 失败、整批网格不绘制；现在保持 `autoUpdate = true`。
+- 后处理链：`RenderPass → BokehPass → UnrealBloomPass → GradePass → OutputPass`。
+  `?nobokeh=1` 可关闭景深；Bokeh 的聚焦距离随相机与注视点更新。
+- 水面使用 `Reflector` + 自定义 shader；月亮碎影、渔火倒影和钟声涟漪都在
+  `water.js` 的 GLSL 中。新增灯源时通过 `water.setLantern(index, position, color, power)`
+  注册，最多 10 盏。
+- 所有贴图由 `src/utils/textures.js` 的 Canvas 生成，不引入外部模型或图片。
+  场景内的水声、风声、鸦鸣与寺钟由 `src/audio.js` 程序化合成；成片配乐由
+  `scripts/compose-score.py`（numpy / scipy）或 `compose-score-guqin.py` /
+  `compose-score-guzheng.py` 合成。另有一条使用 HeyGen 曲库 BGM 的成片版本
+  （`compose-heygen-fx.py` 叠加画内音，源曲在 `.media/`），不属于程序化生成。
+
+调试入口是 `window.__fengqiao`（`renderer / scene / camera / controls / composer /
+world / film / audio / flyTo / setView / setDemo`）。影片导出流程：
+`npm run dev -- --port 5188 --strictPort`，然后
+`npm run export:film -- --url http://127.0.0.1:5188/ --frames deliverables/frames`、
+`npm run encode:film -- ...`、`npm run stills:film -- ...`、`npm run score`；完整母带与
+封装命令见 `material/枫桥夜泊/deliverables/REPORT.md`。
+`deliverables/` 被根 `.gitignore` 忽略，成片、配乐与帧序列都不入库。
 
 ## 授权
 
