@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { PEAKS } from "../src/config.js";
+import { CAMERA_VIEWS, PEAKS } from "../src/config.js";
 import { heightAt } from "../src/world/shape.js";
 
 const byId = Object.fromEntries(PEAKS.map((peak) => [peak.id, peak]));
@@ -80,3 +80,24 @@ for (const [aId, bId] of [
 }
 
 console.log("layout ok");
+
+const targetFor = ["tongtian", "longshou", "luoxia", "fenghui", "dazhu", "xiaozhu", "chaoyang"];
+for (const id of targetFor) {
+  const view = CAMERA_VIEWS[id];
+  const peak = byId[id];
+  const t = view.target;
+  assert.ok(
+    Math.hypot(t[0] - peak.x, t[2] - peak.z) < 500,
+    `${id} view target off peak`,
+  );
+  assert.ok(
+    t[1] >= peak.height - 80 && t[1] <= peak.height + 120,
+    `${id} view target height`,
+  );
+  assert.ok(view.position[1] > peak.height - 200, `${id} view below summit`);
+}
+assert.ok(
+  Math.hypot(CAMERA_VIEWS.overview.target[0], CAMERA_VIEWS.overview.target[2]) < 300,
+  "overview does not target the center",
+);
+console.log("views ok");

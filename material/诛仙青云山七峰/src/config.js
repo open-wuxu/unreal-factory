@@ -201,14 +201,14 @@ export const SUN_KEYS = [
 
 /** 导航机位。 */
 export const CAMERA_VIEWS = {
-  overview: { position: [4300, 2150, 5200], target: [0, 1000, 0] },
+  overview: { position: [5200, 2400, -5600], target: [0, 1050, 0] },
   tongtian: { position: [900, 1980, 1200], target: [0, 1790, 0] },
-  longshou: { position: [-300, 1800, -1900], target: [-200, 1500, -2900] },
-  luoxia: { position: [-1200, 1620, -850], target: [-2350, 1280, -1750] },
-  fenghui: { position: [-3900, 1500, 900], target: [-3250, 1450, 250] },
-  dazhu: { position: [-2350, 1500, 3300], target: [-2000, 1150, 2600] },
-  xiaozhu: { position: [900, 1500, 3500], target: [1700, 1320, 2900] },
-  chaoyang: { position: [3900, 1650, 500], target: [3100, 1450, -250] },
+  longshou: { position: [500, 1700, -1200], target: [1450, 1420, -2500] },
+  luoxia: { position: [-1000, 1650, 800], target: [-2500, 1290, 2500] },
+  fenghui: { position: [-4200, 1500, 900], target: [-3250, 1330, 250] },
+  dazhu: { position: [-1200, 1500, -900], target: [-2600, 1210, -1800] },
+  xiaozhu: { position: [800, 1500, 1900], target: [1900, 1360, 3000] },
+  chaoyang: { position: [4200, 1650, 250], target: [3300, 1370, -150] },
 };
 
 export const ATMOSPHERE = {
