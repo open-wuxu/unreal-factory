@@ -7,14 +7,13 @@
 **36 秒、60 fps 的五镜头电影**。
 
 所有几何、贴图、天空、云海、水面、植被与场景内声音（风、云海、瀑布、钟）都由代码生成，
-不依赖外部模型或图片；成片配乐采用 HeyGen 曲库中的授权曲目（见「资源与许可」）。
+不依赖外部模型或图片；本次交付的成片为 1280×720 无声视频。
 
 ![开场](docs/preview.jpg)
 
 ## 成片
 
-- `deliverables/qingyun-seven-peaks-2k60.mp4` — 2560×1440 / 60 fps / 36.0 s / H.264 High + AAC，−18.8 LUFS。
-- `deliverables/qingyun-seven-peaks-2k60-silent.mp4` — 无声备份，供重新配乐。
+- `deliverables/qingyun-seven-peaks-720p60.mp4` — 1280×720 / 60 fps / 36.0 s / H.264，无音轨。
 - `deliverables/previews/` — 七张关键镜头截图（2K PNG）。
 - `deliverables/frames/` — 2160 帧 JPEG 序列（可用 `--resume` 续传）。
 - `deliverables/REPORT.md` — 实际导出规格、渲染耗时与验收记录。
@@ -144,26 +143,15 @@ npm run dev -- --port 5199 --strictPort
 另开终端：
 
 ```bash
-# 1. 逐帧捕获（2560×1440，60 fps，2160 帧）
-npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames
+# 1. 逐帧捕获（1280×720，60 fps，2160 帧）
+npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames \
+  --width 1280 --height 720
 
-# 2. 编码无声视频
+# 2. 编码成片（无音轨）
 npm run encode:film -- --frames deliverables/frames \
-  --out deliverables/qingyun-seven-peaks-2k60-silent.mp4
+  --out deliverables/qingyun-seven-peaks-720p60.mp4
 
-# 3. HeyGen 曲库配乐：裁到 36 s，淡入淡出并做响度母带
-#    源曲缓存于 .media/audio/bgm/heygen-bgm-001.wav（45 s，不入库）
-ffmpeg -y -i .media/audio/bgm/heygen-bgm-001.wav -t 36 \
-  -af "afade=t=in:st=0:d=0.6,afade=t=out:st=34.4:d=1.6,loudnorm=I=-18:TP=-2:LRA=9" \
-  -ar 48000 -ac 2 deliverables/qingyun-heygen-score.wav
-
-# 4. 封装音轨（视频流直接复制）
-ffmpeg -y -i deliverables/qingyun-seven-peaks-2k60-silent.mp4 \
-  -i deliverables/qingyun-heygen-score.wav \
-  -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -ar 48000 -ac 2 \
-  -shortest -movflags +faststart deliverables/qingyun-seven-peaks-2k60.mp4
-
-# 5. 关键镜头截图
+# 3. 关键镜头截图
 npm run stills:film -- --url http://127.0.0.1:5199/ --out deliverables/previews
 ```
 
@@ -173,9 +161,8 @@ npm run stills:film -- --url http://127.0.0.1:5199/ --out deliverables/previews
 ## 资源与许可
 
 - 所有几何、贴图、环境贴图、天空、云海、水面、粒子与场景内声音均由本项目源码生成。
-- 成片配乐为 HeyGen 曲库曲目（`provider: heygen.audio.sounds`，track id
-  `89d7b95ce80f49ee9d1ecd27f23f5629`），授权与母带记录见 `docs/heygen-score.md`；
-  源曲以本地缓存形式复用，不随仓库分发。
+- 本次交付成片不含音轨。若后续需要配乐，HeyGen 曲库曲目的来源与母带记录保留在
+  `docs/heygen-score.md`（本版本未封装）；页面内的声音开关仍播放程序化 Web Audio。
 - 未使用任何外部 GLB / glTF 模型、图片或字体文件。
 - 中文排版使用系统衬线字体（Songti SC / STSong / SimSun / Noto Serif CJK SC）。
 - Three.js 采用 MIT 许可；本项目代码可直接用于学习与二次创作。

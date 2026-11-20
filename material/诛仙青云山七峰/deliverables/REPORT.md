@@ -11,33 +11,30 @@
 - `heightAt` 新增龙首—朝阳、风回—落霞两条低矮连接山脊（crest 1140 / 1120 m）。
 - 五镜头机位全部重设：镜一改为东北高空逆光全景；镜三从大竹竹海越通天峰西北山肩
   隔峰远眺小竹；镜四转向东北龙首脊线；镜五拉远至通天峰居中的全景。
-- 山腰云带 1320 m / 7% → 1310 m / 5%，`uBandTop` 1460 m。
-- 风回瀑布落点外移（落差约 340 m）；新增大竹峰北坡支瀑（落差约 170 m）；
-  山泉与仙鹤群跟随新峰位。
-- 成片配乐改用 HeyGen 曲库曲目（见「资源与许可」）。
+- 山腰云带 1320 m / 7% → 1310 m / 1.5%，`uBandTop` 1460 m。
+- 风回瀑布改为逐点贴地路径（落差约 340 m）；新增大竹峰北坡支瀑（落差约 170 m）；
+  水雾与水潭贴地归位；山泉与仙鹤群跟随新峰位。
+- 本次交付为单版本 **1280×720 无声视频**，不封装音轨。
 
 ## 交付物
 
 | 文件 | 规格 |
 | --- | --- |
-| `deliverables/qingyun-seven-peaks-2k60.mp4` | 2560×1440 / 60 fps / 36.000 s / 2160 帧 / H.264 High / AAC 192 kbps / 74.3 Mbps / 318.8 MiB / −18.8 LUFS（TP −2.0 dBTP，LRA 4.7） |
-| `deliverables/qingyun-seven-peaks-2k60-silent.mp4` | 同上，无音轨，317.9 MiB，供重新配乐 |
-| `deliverables/qingyun-heygen-score.wav` | 48 kHz / 立体声 / 36.0 s / −18.8 LUFS / HeyGen 曲库曲目 |
+| `deliverables/qingyun-seven-peaks-720p60.mp4` | 1280×720 / 60 fps / 36.000 s / 2160 帧 / H.264 High / 17.5 Mbps / 74.9 MiB / 无音轨 |
 | `deliverables/previews/01–07-*.png` | 七张 2560×1440 关键镜头截图（04 为 t=16.8 s 竹海） |
-| `deliverables/frames/` | 2160 帧 JPEG 序列 + manifest.json（gitignore，可重新生成） |
+| `deliverables/frames/` | 2160 帧 1280×720 JPEG 序列 + manifest.json（gitignore，可重新生成） |
 
-本次逐帧捕获耗时 **296 秒**（约 7.3 帧/秒；建筑合并后 draw call 从 3188 级降到 32 个批次），
+本次逐帧捕获耗时 **123 秒**（720p；建筑合并后 draw call 从 3188 级降到 32 个批次），
 编码为 libx264 CRF 16 / preset slow / BT.709 / yuv420p。帧序列可由 `manifest.json` 复核。
 
 ## 渲染与导出
 
 1. `npm run dev -- --port 5199 --strictPort`
-2. `npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames`
+2. `npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames --width 1280 --height 720`
    （`?film=1&capture=1`，固定 1/60 秒步长，固定随机种子）
-3. `npm run encode:film -- --frames deliverables/frames --out deliverables/qingyun-seven-peaks-2k60-silent.mp4`
-   （libx264，CRF 16，preset slow，yuv420p，BT.709）
-4. HeyGen 曲库配乐：`afade` 裁到 36 s + `loudnorm I=-18 TP=-2 LRA=9`（实测 −18.8 LUFS）
-5. ffmpeg 封装 AAC 音轨，视频流直接复制
+3. `npm run encode:film -- --frames deliverables/frames --out deliverables/qingyun-seven-peaks-720p60.mp4`
+   （libx264，CRF 16，preset slow，yuv420p，BT.709；无音轨）
+4. `npm run stills:film` 导出关键画面
 6. `npm run stills:film` 导出关键画面
 
 ## 场景统计
@@ -53,7 +50,7 @@
 | 阴影 | 单方向光 4096² PCF，`autoUpdate=false`，焦点跟随镜头（±1400 m），影片帧与焦点变化时显式刷新 |
 | 后处理 | 体积云 → Bloom → Grade → OutputPass → SMAA |
 
-本次实际渲染耗时 296 s、成片 318.8 MiB；`deliverables/frames/manifest.json` 记录了
+本次实际渲染耗时 123 s、成片 74.9 MiB；`deliverables/frames/manifest.json` 记录了
 帧数、分辨率与耗时。
 
 ## 验证记录
@@ -64,7 +61,7 @@
 - `npm run test:determinism`：同一时刻 `t=12` / `t=24` 从不同 seek 历史重放，截图解码后的像素 MD5 完全一致。
 - `npm run verify:scene -- --resize`：1600×900 → 1280×720 → 2560×1440，云 Pass 半分辨率目标随之缩放，阴影不自动重建，无 WebGL 上下文丢失。
 - `npm run build`：通过（仅有 Three.js 单包体积警告）。
-- 成片：`ffprobe` 确认 2560×1440 / 60 fps / 2160 帧 / 36.000 s / AAC 48 kHz 立体声；`loudnorm` 实测 −18.8 LUFS，真峰 −2.0 dBTP。
+- 成片：`ffprobe` 确认 1280×720 / 60 fps / 2160 帧 / 36.000 s / H.264，仅视频流、无音轨。
 
 ## 审查修复
 
@@ -81,7 +78,7 @@
 9. 建筑 3188 个独立 Mesh → 按材质合并为 32 个批次。
 10. 环间法线/AO 接缝 → 地形法线统一由 `normalAt` 生成，AO 在近环外缘渐隐。
 
-重新导出后，本次捕获耗时从 305 s 降到 264 s。
+上一轮优化曾把捕获耗时从 305 s 降到 264 s；本轮中央主峰重构后以 720p 重新导出为 123 s。
 
 ## 已知限制
 
@@ -95,6 +92,5 @@
 ## 资源与许可
 
 所有几何、贴图、环境贴图、云、水、植被与场景内声音均由源码程序化生成，未使用外部模型、
-图片或采样。成片配乐为 HeyGen 曲库曲目（`provider: heygen.audio.sounds`，
-track id `89d7b95ce80f49ee9d1ecd27f23f5629`），来源与查询记录在 `.media/manifest.jsonl`；
-源曲以本地缓存复用，不随仓库分发。Three.js 采用 MIT 许可。
+图片或采样。本次交付的成片不含音轨；HeyGen 曲库曲目的来源与母带记录保留在
+`docs/heygen-score.md`（本版本未封装）。Three.js 采用 MIT 许可。
