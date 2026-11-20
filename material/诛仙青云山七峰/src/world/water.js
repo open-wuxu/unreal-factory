@@ -157,87 +157,109 @@ export function createWater(scene) {
   };
   const waterfallMaterial = waterMaterial(waterfallUniforms);
   const streamMaterial = waterMaterial(streamUniforms);
+  const sprayTexture = createSprayTexture();
+  const sprays = [];
+
+  function addWaterfall({ start, end, width, sprayCount, pondRadius, kind }) {
+    const mid1 = start.clone().lerp(end, 0.3);
+    mid1.y -= Math.min(140, (start.y - end.y) * 0.35);
+    const mid2 = start.clone().lerp(end, 0.72);
+    mid2.y += Math.min(90, (start.y - end.y) * 0.22);
+
+    const curve = new THREE.CatmullRomCurve3([start, mid1, mid2, end]);
+    const mesh = new THREE.Mesh(
+      ribbonGeometry(curve.getPoints(56), width),
+      waterfallMaterial,
+    );
+    mesh.frustumCulled = false;
+    group.add(mesh);
+
+    const sprayPositions = new Float32Array(sprayCount * 3);
+    const sprayRandom = seededRandom(7741 + sprayCount);
+    for (let i = 0; i < sprayCount; i++) {
+      const angle = sprayRandom() * Math.PI * 2;
+      const radius = sprayRandom() * width * 1.4;
+      sprayPositions[i * 3] = end.x + Math.cos(angle) * radius;
+      sprayPositions[i * 3 + 1] = end.y + sprayRandom() * width * 1.1;
+      sprayPositions[i * 3 + 2] = end.z + Math.sin(angle) * radius;
+    }
+    const sprayGeometry = new THREE.BufferGeometry();
+    sprayGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(sprayPositions, 3),
+    );
+    const spray = new THREE.Points(
+      sprayGeometry,
+      new THREE.PointsMaterial({
+        color: 0xdce9ee,
+        size: width * 0.83,
+        map: sprayTexture,
+        transparent: true,
+        opacity: 0.42,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    group.add(spray);
+    sprays.push(spray);
+
+    if (typeof window !== "undefined" && pondRadius > 0) {
+      const pond = new Reflector(new THREE.CircleGeometry(pondRadius, 32), {
+        textureWidth: 512,
+        textureHeight: 512,
+        color: 0x3d5560,
+        clipBias: 0.003,
+      });
+      pond.rotation.x = -Math.PI / 2;
+      pond.position.set(
+        end.x + pondRadius * 0.63,
+        end.y - 1.5,
+        end.z + pondRadius * 0.63,
+      );
+      group.add(pond);
+
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(pondRadius + 0.5, 1.2, 8, 28),
+        new THREE.MeshStandardMaterial({ color: 0x7a776d, roughness: 0.9 }),
+      );
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(
+        end.x + pondRadius * 0.63,
+        end.y - 0.8,
+        end.z + pondRadius * 0.63,
+      );
+      rim.castShadow = true;
+      rim.receiveShadow = true;
+      group.add(rim);
+    }
+
+    waterfalls.push({ start, end, mesh, kind });
+  }
 
   /* 风回峰瀑布 ------------------------------------------------------ */
-  const start = new THREE.Vector3(
-    -3180,
-    heightAt(-3180, 320) + 3,
-    320,
-  );
-  const end = new THREE.Vector3(-2700, heightAt(-2700, 940) + 2, 940);
+  addWaterfall({
+    start: new THREE.Vector3(-3180, heightAt(-3180, 320) + 3, 320),
+    end: new THREE.Vector3(-2700, heightAt(-2700, 940) + 2, 940),
+    width: 24,
+    sprayCount: 260,
+    pondRadius: 19,
+    kind: "main",
+  });
 
-  const curve = new THREE.CatmullRomCurve3([
-    start,
-    new THREE.Vector3(start.x + 34, start.y - 120, start.z + 62),
-    new THREE.Vector3(end.x + 18, end.y + 80, end.z + 22),
-    end,
-  ]);
-  const curvePoints = curve.getPoints(56);
-  const waterfall = new THREE.Mesh(
-    ribbonGeometry(curvePoints, 24),
-    waterfallMaterial,
-  );
-  waterfall.frustumCulled = false;
-  group.add(waterfall);
-
-  const sprayTexture = createSprayTexture();
-  const sprayCount = 260;
-  const sprayPositions = new Float32Array(sprayCount * 3);
-  const sprayRandom = seededRandom(7741);
-  for (let i = 0; i < sprayCount; i++) {
-    const angle = sprayRandom() * Math.PI * 2;
-    const radius = sprayRandom() * 34;
-    sprayPositions[i * 3] = end.x + Math.cos(angle) * radius;
-    sprayPositions[i * 3 + 1] = end.y + sprayRandom() * 26;
-    sprayPositions[i * 3 + 2] = end.z + Math.sin(angle) * radius;
-  }
-  const sprayGeometry = new THREE.BufferGeometry();
-  sprayGeometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(sprayPositions, 3),
-  );
-  const spray = new THREE.Points(
-    sprayGeometry,
-    new THREE.PointsMaterial({
-      color: 0xdce9ee,
-      size: 20,
-      map: sprayTexture,
-      transparent: true,
-      opacity: 0.42,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    }),
-  );
-  group.add(spray);
-
-  if (typeof window !== "undefined") {
-    const pond = new Reflector(new THREE.CircleGeometry(19, 32), {
-      textureWidth: 512,
-      textureHeight: 512,
-      color: 0x3d5560,
-      clipBias: 0.003,
-    });
-    pond.rotation.x = -Math.PI / 2;
-    pond.position.set(end.x + 12, end.y - 1.5, end.z + 12);
-    group.add(pond);
-
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(19.5, 1.2, 8, 28),
-      new THREE.MeshStandardMaterial({ color: 0x7a776d, roughness: 0.9 }),
-    );
-    rim.rotation.x = Math.PI / 2;
-    rim.position.set(end.x + 12, end.y - 0.8, end.z + 12);
-    rim.castShadow = true;
-    rim.receiveShadow = true;
-    group.add(rim);
-  }
-
-  waterfalls.push({ start, end, mesh: waterfall });
+  /* 大竹峰北坡支瀑 -------------------------------------------------- */
+  addWaterfall({
+    start: new THREE.Vector3(-2600, heightAt(-2600, -1960) + 1, -1960),
+    end: new THREE.Vector3(-2600, heightAt(-2600, -2140) + 1, -2140),
+    width: 9.6,
+    sprayCount: 120,
+    pondRadius: 7,
+    kind: "tributary",
+  });
 
   /* 山泉 ------------------------------------------------------------ */
   const streamDefinitions = [
-    [-1990, 2620, -1855, 2960],
-    [1710, 2915, 1880, 3170],
+    [-2550, -1550, -2400, -1350],
+    [1750, 2950, 1950, 3200],
   ];
   for (const [x0, z0, x1, z1] of streamDefinitions) {
     const points = sampleStream(x0, z0, x1, z1, 18);
@@ -261,7 +283,7 @@ export function createWater(scene) {
       clock += delta;
     }
     timeUniform.value = clock;
-    spray.rotation.y = clock * 0.05;
+    for (const spray of sprays) spray.rotation.y = clock * 0.05;
   }
 
   return {
