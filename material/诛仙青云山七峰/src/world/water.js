@@ -160,11 +160,11 @@ export function createWater(scene) {
 
   /* 风回峰瀑布 ------------------------------------------------------ */
   const start = new THREE.Vector3(
-    -3140,
-    heightAt(-3140, 360) + 3,
-    360,
+    -3180,
+    heightAt(-3180, 320) + 3,
+    320,
   );
-  const end = new THREE.Vector3(-3005, heightAt(-3005, 555) + 2, 555);
+  const end = new THREE.Vector3(-2700, heightAt(-2700, 940) + 2, 940);
 
   const curve = new THREE.CatmullRomCurve3([
     start,

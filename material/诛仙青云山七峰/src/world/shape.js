@@ -34,8 +34,49 @@ const PEAK_DATA = PEAKS.map((peak, index) => {
   };
 });
 
-function peakLocal(peak, x, z) {
-  const dx = x - peak.x;
+// 低矮连接山脊：让部分主峰之间通过露出云海的次级山脉相连，
+// 而不是每座峰都孤立地立在谷地里。crest 为绝对高度，明显低于两侧主峰。
+const RIDGE_LINKS = [
+  { a: "longshou", b: "chaoyang", crest: 1140, spread: 650, seed: 311 },
+  { a: "fenghui", b: "luoxia", crest: 1120, spread: 680, seed: 317 },
+];
+
+const RIDGE_DATA = RIDGE_LINKS.map((link) => ({
+  ...link,
+  a: PEAK_DATA.find((peak) => peak.id === link.a),
+  b: PEAK_DATA.find((peak) => peak.id === link.b),
+}));
+
+function ridgeBodyAt(x, z) {
+  let body = 0;
+  const base = baseHeight(x, z);
+  for (const link of RIDGE_DATA) {
+    const abx = link.b.x - link.a.x;
+    const abz = link.b.z - link.a.z;
+    const len2 = abx * abx + abz * abz;
+    const t = clamp(
+      ((x - link.a.x) * abx + (z - link.a.z) * abz) / len2,
+      0,
+      1,
+    );
+    const px = link.a.x + abx * t;
+    const pz = link.a.z + abz * t;
+    const d = Math.hypot(x - px, z - pz);
+    const fade = smoothstep(0, 0.18, t) * (1 - smoothstep(0.82, 1, t));
+    if (fade <= 0) continue;
+    // 脊线加一点起伏，避免笔直的人工土堤。
+    const rough = 0.95 + 0.05 * fbm2(x * 0.0032, z * 0.0032, 3, link.seed);
+    const shape =
+      fade * Math.exp(-Math.pow(d / link.spread, 2)) * rough;
+    // 以绝对高度收敛到 crest：基础地形越高，需要补的体量越少。
+    const desired =
+      WORLD.valleyBase + (link.crest - WORLD.valleyBase) * shape;
+    body = Math.max(body, desired - base);
+  }
+  return Math.max(0, body);
+}
+
+function peakLocal(peak, x, z) {  const dx = x - peak.x;
   const dz = z - peak.z;
   const lx = (dx * peak.cos + dz * peak.sin) / peak.stretch;
   const lz = -dx * peak.sin + dz * peak.cos;
@@ -117,7 +158,8 @@ function rawHeightAt(x, z) {
     peakMax = Math.max(peakMax, body);
     sum += body;
   }
-  return baseHeight(x, z) + peakMax + 0.08 * Math.max(0, sum - peakMax);
+  const terrainMax = Math.max(peakMax, ridgeBodyAt(x, z));
+  return baseHeight(x, z) + terrainMax + 0.08 * Math.max(0, sum - terrainMax);
 }
 
 // 迭代标定每座峰的自然顶点，使 heightAt(峰心) == 配置高度。
@@ -147,8 +189,9 @@ export function heightAt(x, z) {
     }
   }
 
+  const terrainMax = Math.max(peakMax, ridgeBodyAt(x, z));
   let height =
-    baseHeight(x, z) + peakMax + 0.08 * Math.max(0, sum - peakMax);
+    baseHeight(x, z) + terrainMax + 0.08 * Math.max(0, sum - terrainMax);
 
   const nearestDistance = nearestScore * nearest.plateau;
   const detailWeight = smoothstep(
