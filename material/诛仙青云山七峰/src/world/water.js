@@ -240,7 +240,7 @@ export function createWater(scene) {
   addWaterfall({
     start: new THREE.Vector3(-3180, heightAt(-3180, 320) + 3, 320),
     end: new THREE.Vector3(-2700, heightAt(-2700, 940) + 2, 940),
-    width: 24,
+    width: 36,
     sprayCount: 260,
     pondRadius: 19,
     kind: "main",

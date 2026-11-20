@@ -41,7 +41,7 @@ const stills = [
   { time: 1.6, name: "01-cloud-open" },
   { time: 5.4, name: "02-seven-peaks" },
   { time: 12.5, name: "03-tongtian-hall" },
-  { time: 18.5, name: "04-bamboo-peaks" },
+  { time: 16.8, name: "04-bamboo-peaks" },
   { time: 24.5, name: "05-waterfall" },
   { time: 31.5, name: "06-luoxia" },
   { time: 35.0, name: "07-title" },

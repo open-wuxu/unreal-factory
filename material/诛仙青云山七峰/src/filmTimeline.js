@@ -42,8 +42,8 @@ export const FILM_SHOTS = [
     end: 22,
     subtitle: "竹影摇风，双峰对望",
     keys: [
-      { t: 15, position: V(-3200, 1420, -1000), target: V(-2600, 1220, -1800) },
-      { t: 18, position: V(-2500, 1520, -700), target: V(-800, 1350, 300) },
+      { t: 15, position: V(-2760, 960, -2280), target: V(-2600, 1150, -1800) },
+      { t: 18, position: V(-2350, 1150, -2050), target: V(-800, 1300, 0) },
       { t: 22, position: V(-900, 1850, 500), target: V(1900, 1400, 3000) },
     ],
   },
@@ -53,8 +53,8 @@ export const FILM_SHOTS = [
     end: 29,
     subtitle: "龙首垂瀑，风回千仞",
     keys: [
-      { t: 22, position: V(-2700, 1200, 700), target: V(-3070, 1180, 450) },
-      { t: 25, position: V(-2760, 1240, 710), target: V(-3070, 1200, 450) },
+      { t: 22, position: V(-2350, 1150, 1100), target: V(-2940, 1050, 620) },
+      { t: 25, position: V(-2400, 1180, 1130), target: V(-2940, 1030, 620) },
       { t: 29, position: V(-1200, 2050, 100), target: V(1450, 1450, -2500) },
     ],
   },
