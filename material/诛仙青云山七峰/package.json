@@ -15,6 +15,7 @@
     "export:film": "node scripts/export-film.mjs",
     "encode:film": "node scripts/encode-film.mjs",
     "stills:film": "node scripts/capture-stills.mjs",
+    "mux:score": "node scripts/mux-score.mjs",
     "score": "python3 scripts/compose-score.py"
   },
   "dependencies": {

@@ -7,13 +7,15 @@
 **36 秒、60 fps 的五镜头电影**。
 
 所有几何、贴图、天空、云海、水面、植被与场景内声音（风、云海、瀑布、钟）都由代码生成，
-不依赖外部模型或图片；本次交付的成片为 1280×720 无声视频。
+不依赖外部模型或图片；成片配乐来自 HeyGen 曲库。
 
 ![开场](docs/preview.jpg)
 
 ## 成片
 
-- `deliverables/qingyun-seven-peaks-720p60.mp4` — 1280×720 / 60 fps / 36.0 s / H.264，无音轨。
+- `deliverables/qingyun-seven-peaks-720p60.mp4` — 1280×720 / 60 fps / 36.0 s / H.264 + AAC 配乐。
+- `deliverables/qingyun-seven-peaks-720p60-silent.mp4` — 同规格无声备份。
+- `deliverables/qingyun-heygen-score.wav` — 36 s 母带配乐（48 kHz 立体声，−17.9 LUFS）。
 - `deliverables/previews/` — 七张关键镜头截图（2K PNG）。
 - `deliverables/frames/` — 2160 帧 JPEG 序列（可用 `--resume` 续传）。
 - `deliverables/REPORT.md` — 实际导出规格、渲染耗时与验收记录。
@@ -124,6 +126,7 @@ scripts/
   verify-scene.mjs   场景加载、resize 与运行时错误检查
   export-film.mjs    逐帧导出 JPEG 序列
   encode-film.mjs    编码 2K / 60fps H.264
+  mux-score.mjs      将母带配乐封装进无声成片
   capture-stills.mjs 关键镜头截图
   compose-score.py   36 秒程序化配乐（备用；成片现用 HeyGen 曲库）
 ```
@@ -147,11 +150,15 @@ npm run dev -- --port 5199 --strictPort
 npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames \
   --width 1280 --height 720
 
-# 2. 编码成片（无音轨）
+# 2. 编码无声成片
 npm run encode:film -- --frames deliverables/frames \
-  --out deliverables/qingyun-seven-peaks-720p60.mp4
+  --out deliverables/qingyun-seven-peaks-720p60-silent.mp4
 
-# 3. 关键镜头截图
+# 3. 母带配乐并封装（曲目与剪辑点见 docs/heygen-score.md）
+#    先用 ffmpeg 生成 deliverables/qingyun-heygen-score.wav，再：
+npm run mux:score
+
+# 4. 关键镜头截图
 npm run stills:film -- --url http://127.0.0.1:5199/ --out deliverables/previews
 ```
 
@@ -161,8 +168,8 @@ npm run stills:film -- --url http://127.0.0.1:5199/ --out deliverables/previews
 ## 资源与许可
 
 - 所有几何、贴图、环境贴图、天空、云海、水面、粒子与场景内声音均由本项目源码生成。
-- 本次交付成片不含音轨。若后续需要配乐，HeyGen 曲库曲目的来源与母带记录保留在
-  `docs/heygen-score.md`（本版本未封装）；页面内的声音开关仍播放程序化 Web Audio。
+- 成片配乐来自 HeyGen 曲库（OAuth 授权，曲目不随仓库分发），来源、剪辑点与母带命令见
+  `docs/heygen-score.md`；页面内的声音开关仍播放程序化 Web Audio。
 - 未使用任何外部 GLB / glTF 模型、图片或字体文件。
 - 中文排版使用系统衬线字体（Songti SC / STSong / SimSun / Noto Serif CJK SC）。
 - Three.js 采用 MIT 许可；本项目代码可直接用于学习与二次创作。

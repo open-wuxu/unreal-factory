@@ -2,6 +2,18 @@
 
 日期：2026-11-20
 
+## 配乐与重新封装（2026-11-20）
+
+在无声 720p60 成片基础上重新配乐：
+
+- 从 HeyGen 曲库检索国风仙侠曲目（track `4e3d63277b074f4ca246938d6322bea7`，50 s），
+  按 **9.56–45.56 s** 剪辑为 36 s：9.56 s 为干净乐句起点，15.5 s 起的太鼓与管弦推进
+  落在镜三、镜四，42–45 s 的末音衰减落在片尾画面淡出处。
+- 母带目标 −18 LUFS / −2 dBTP，实测 **−17.9 LUFS / −1.9 dBTP**（48 kHz 立体声）；
+  源曲真峰 0 dBFS，采用线性增益而非动态 loudnorm。
+- 以 `c:v copy` 封装 AAC 192 kbps 音轨，视频流零重编码；保留 `-silent.mp4` 无声备份。
+- 新增 `scripts/mux-score.mjs`（`npm run mux:score`），完整命令见 `docs/heygen-score.md`。
+
 ## 中央主峰重构（2026-11-20）
 
 按「中央主峰统领群山（方案 A）」重构：
@@ -14,13 +26,15 @@
 - 山腰云带 1320 m / 7% → 1310 m / 1.5%，`uBandTop` 1460 m。
 - 风回瀑布改为逐点贴地路径（落差约 340 m）；新增大竹峰北坡支瀑（落差约 170 m）；
   水雾与水潭贴地归位；山泉与仙鹤群跟随新峰位。
-- 本次交付为单版本 **1280×720 无声视频**，不封装音轨。
+- 本轮交付为单版本 **1280×720 视频**，配乐按 2026-11-20 重新封装（见文首）。
 
 ## 交付物
 
 | 文件 | 规格 |
 | --- | --- |
-| `deliverables/qingyun-seven-peaks-720p60.mp4` | 1280×720 / 60 fps / 36.000 s / 2160 帧 / H.264 High / 17.5 Mbps / 74.9 MiB / 无音轨 |
+| `deliverables/qingyun-seven-peaks-720p60.mp4` | 1280×720 / 60 fps / 36.000 s / 2160 帧 / H.264 High / 17.5 Mbps / 75.8 MiB / AAC 192 kbps 配乐 |
+| `deliverables/qingyun-seven-peaks-720p60-silent.mp4` | 同规格无声备份（无音轨） |
+| `deliverables/qingyun-heygen-score.wav` | 36.0 s / 48 kHz / 立体声 / −17.9 LUFS / −1.9 dBTP |
 | `deliverables/previews/01–07-*.png` | 七张 2560×1440 关键镜头截图（04 为 t=16.8 s 竹海） |
 | `deliverables/frames/` | 2160 帧 1280×720 JPEG 序列 + manifest.json（gitignore，可重新生成） |
 
@@ -32,10 +46,10 @@
 1. `npm run dev -- --port 5199 --strictPort`
 2. `npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames --width 1280 --height 720`
    （`?film=1&capture=1`，固定 1/60 秒步长，固定随机种子）
-3. `npm run encode:film -- --frames deliverables/frames --out deliverables/qingyun-seven-peaks-720p60.mp4`
+3. `npm run encode:film -- --frames deliverables/frames --out deliverables/qingyun-seven-peaks-720p60-silent.mp4`
    （libx264，CRF 16，preset slow，yuv420p，BT.709；无音轨）
-4. `npm run stills:film` 导出关键画面
-6. `npm run stills:film` 导出关键画面
+4. `npm run mux:score` 封装 HeyGen 配乐
+5. `npm run stills:film` 导出关键画面
 
 ## 场景统计
 
@@ -61,7 +75,8 @@
 - `npm run test:determinism`：同一时刻 `t=12` / `t=24` 从不同 seek 历史重放，截图解码后的像素 MD5 完全一致。
 - `npm run verify:scene -- --resize`：1600×900 → 1280×720 → 2560×1440，云 Pass 半分辨率目标随之缩放，阴影不自动重建，无 WebGL 上下文丢失。
 - `npm run build`：通过（仅有 Three.js 单包体积警告）。
-- 成片：`ffprobe` 确认 1280×720 / 60 fps / 2160 帧 / 36.000 s / H.264，仅视频流、无音轨。
+- 成片：`ffprobe` 确认 1280×720 / 60 fps / 2160 帧 / 36.000 s / H.264，含 AAC 48 kHz 立体声音轨；
+  音轨实测 −17.9 LUFS / −1.9 dBTP，视频流未重编码。
 
 ## 审查修复
 
@@ -92,5 +107,5 @@
 ## 资源与许可
 
 所有几何、贴图、环境贴图、云、水、植被与场景内声音均由源码程序化生成，未使用外部模型、
-图片或采样。本次交付的成片不含音轨；HeyGen 曲库曲目的来源与母带记录保留在
-`docs/heygen-score.md`（本版本未封装）。Three.js 采用 MIT 许可。
+图片或采样。成片配乐来自 HeyGen 曲库（OAuth 授权，曲目文件不随仓库分发），
+来源、剪辑点与母带命令见 `docs/heygen-score.md`。Three.js 采用 MIT 许可。
