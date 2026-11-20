@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { PEAKS } from "../src/config.js";
+import { heightAt } from "../src/world/shape.js";
 import {
   FILM_DURATION,
   FILM_FPS,
@@ -47,6 +48,22 @@ assertTargetNear(24.5, "fenghui", 600);
 assertTargetNear(31.5, "luoxia", 400);
 sampleFilmCamera(35.8, position, target);
 assert.ok(Math.hypot(target.x, target.z) < 600, "ending overview targets tongtian");
+
+function peakVisible(time, id, lift = 30) {
+  sampleFilmCamera(time, position, target);
+  const peak = byId[id];
+  const top = new THREE.Vector3(peak.x, peak.height + lift, peak.z);
+  for (let i = 1; i < 48; i++) {
+    const u = i / 48;
+    const x = position.x + (top.x - position.x) * u;
+    const y = position.y + (top.y - position.y) * u;
+    const z = position.z + (top.z - position.z) * u;
+    if (heightAt(x, z) > y - 2) return false;
+  }
+  return true;
+}
+assert.ok(peakVisible(21.0, "xiaozhu"), "xiaozhu not visible at 21.0s");
+assert.ok(peakVisible(21.5, "xiaozhu"), "xiaozhu not visible at 21.5s");
 
 assert.equal(transitionOpacityAt(8), 1);
 assert.equal(transitionOpacityAt(15), 1);

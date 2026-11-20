@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { CAMERA_VIEWS, PEAKS } from "../src/config.js";
+import { bandDensity } from "../src/world/clouds.js";
 import { heightAt } from "../src/world/shape.js";
 
 const byId = Object.fromEntries(PEAKS.map((peak) => [peak.id, peak]));
@@ -64,22 +65,32 @@ for (const [aId, bId] of [
 ]) {
   const a = byId[aId];
   const b = byId[bId];
+  let low = Infinity;
   let high = -Infinity;
   for (let s = 4; s <= 16; s++) {
     const u = s / 20;
-    high = Math.max(
-      high,
-      heightAt(a.x + (b.x - a.x) * u, a.z + (b.z - a.z) * u),
-    );
+    const h = heightAt(a.x + (b.x - a.x) * u, a.z + (b.z - a.z) * u);
+    low = Math.min(low, h);
+    high = Math.max(high, h);
   }
-  assert.ok(high > 1080, `${aId}/${bId} has no ridge above the cloud sea`);
+  assert.ok(
+    low > 1080,
+    `${aId}/${bId} ridge submerged at ${low.toFixed(0)}`,
+  );
   assert.ok(
     high < Math.min(a.height, b.height) - 100,
     `${aId}/${bId} ridge is not low enough (${high})`,
   );
 }
 
-console.log("layout ok");
+const SUMMIT_BAND_LIMIT = 0.02;
+for (const id of ringIds) {
+  const density = bandDensity(byId[id].height);
+  assert.ok(
+    density < SUMMIT_BAND_LIMIT,
+    `${id} summit cloud band density ${density.toFixed(3)} too high`,
+  );
+}
 
 const targetFor = ["tongtian", "longshou", "luoxia", "fenghui", "dazhu", "xiaozhu", "chaoyang"];
 for (const id of targetFor) {
@@ -100,4 +111,5 @@ assert.ok(
   Math.hypot(CAMERA_VIEWS.overview.target[0], CAMERA_VIEWS.overview.target[2]) < 300,
   "overview does not target the center",
 );
+console.log("layout ok");
 console.log("views ok");

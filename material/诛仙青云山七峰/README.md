@@ -121,7 +121,7 @@ src/
     noise.js         确定性随机、2D/3D 噪声
     textures.js      程序化 Canvas 贴图与 3D 云噪声
 scripts/
-  test-*.mjs         核心 / 建筑 / 植被 / 水体 / 影片 / 交互测试
+  test-*.mjs         核心 / 地形 / 布局 / 建筑 / 植被 / 水体 / 影片 / 交互测试
   verify-scene.mjs   场景加载、resize 与运行时错误检查
   export-film.mjs    逐帧导出 JPEG 序列
   encode-film.mjs    编码 2K / 60fps H.264
@@ -174,7 +174,7 @@ npm run stills:film -- --url http://127.0.0.1:5199/ --out deliverables/previews
 
 - 所有几何、贴图、环境贴图、天空、云海、水面、粒子与场景内声音均由本项目源码生成。
 - 成片配乐为 HeyGen 曲库曲目（`provider: heygen.audio.sounds`，track id
-  `89d7b95ce80f49ee9d1ecd27f23f5629`），授权信息记录在 `.media/manifest.jsonl`；
+  `89d7b95ce80f49ee9d1ecd27f23f5629`），授权与母带记录见 `docs/heygen-score.md`；
   源曲以本地缓存形式复用，不随仓库分发。
 - 未使用任何外部 GLB / glTF 模型、图片或字体文件。
 - 中文排版使用系统衬线字体（Songti SC / STSong / SimSun / Noto Serif CJK SC）。

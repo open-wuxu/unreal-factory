@@ -158,17 +158,25 @@ export function createWater(scene) {
   const waterfallMaterial = waterMaterial(waterfallUniforms);
   const streamMaterial = waterMaterial(streamUniforms);
   const sprayTexture = createSprayTexture();
-  const sprays = [];
+  const ponds = [];
 
   function addWaterfall({ start, end, width, sprayCount, pondRadius, kind }) {
-    const mid1 = start.clone().lerp(end, 0.3);
-    mid1.y -= Math.min(140, (start.y - end.y) * 0.35);
-    const mid2 = start.clone().lerp(end, 0.72);
-    mid2.y += Math.min(90, (start.y - end.y) * 0.22);
+    // 逐点贴地：水平方向线性插值，垂直方向取直线与地形净空的高者。
+    // 这样水带只会沿坡面下降，不会再像 Catmull-Rom 那样向上折回并穿进山体。
+    const points = [];
+    const steps = 56;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = start.x + (end.x - start.x) * t;
+      const z = start.z + (end.z - start.z) * t;
+      const lineY = start.y + (end.y - start.y) * t;
+      points.push(
+        new THREE.Vector3(x, Math.max(lineY, heightAt(x, z) + 2.5), z),
+      );
+    }
 
-    const curve = new THREE.CatmullRomCurve3([start, mid1, mid2, end]);
     const mesh = new THREE.Mesh(
-      ribbonGeometry(curve.getPoints(56), width),
+      ribbonGeometry(points, width),
       waterfallMaterial,
     );
     mesh.frustumCulled = false;
@@ -201,39 +209,45 @@ export function createWater(scene) {
       }),
     );
     group.add(spray);
-    sprays.push(spray);
 
-    if (typeof window !== "undefined" && pondRadius > 0) {
-      const pond = new Reflector(new THREE.CircleGeometry(pondRadius, 32), {
-        textureWidth: 512,
-        textureHeight: 512,
-        color: 0x3d5560,
-        clipBias: 0.003,
-      });
-      pond.rotation.x = -Math.PI / 2;
-      pond.position.set(
-        end.x + pondRadius * 0.63,
-        end.y - 1.5,
-        end.z + pondRadius * 0.63,
-      );
-      group.add(pond);
+    if (pondRadius > 0) {
+      const pondX = end.x;
+      const pondZ = end.z;
+      const pondY = heightAt(pondX, pondZ) + 0.6;
+      ponds.push({ x: pondX, y: pondY, z: pondZ, radius: pondRadius, kind });
 
-      const rim = new THREE.Mesh(
-        new THREE.TorusGeometry(pondRadius + 0.5, 1.2, 8, 28),
-        new THREE.MeshStandardMaterial({ color: 0x7a776d, roughness: 0.9 }),
-      );
-      rim.rotation.x = Math.PI / 2;
-      rim.position.set(
-        end.x + pondRadius * 0.63,
-        end.y - 0.8,
-        end.z + pondRadius * 0.63,
-      );
-      rim.castShadow = true;
-      rim.receiveShadow = true;
-      group.add(rim);
+      if (typeof window !== "undefined") {
+        const pond = new Reflector(new THREE.CircleGeometry(pondRadius, 32), {
+          textureWidth: 512,
+          textureHeight: 512,
+          color: 0x3d5560,
+          clipBias: 0.003,
+        });
+        pond.rotation.x = -Math.PI / 2;
+        pond.position.set(pondX, pondY, pondZ);
+        group.add(pond);
+
+        const rim = new THREE.Mesh(
+          new THREE.TorusGeometry(pondRadius + 0.5, 1.2, 8, 28),
+          new THREE.MeshStandardMaterial({ color: 0x7a776d, roughness: 0.9 }),
+        );
+        rim.rotation.x = Math.PI / 2;
+        rim.position.set(pondX, pondY + 0.7, pondZ);
+        rim.castShadow = true;
+        rim.receiveShadow = true;
+        group.add(rim);
+      }
     }
 
-    waterfalls.push({ start, end, mesh, kind });
+    waterfalls.push({
+      start,
+      end,
+      mesh,
+      kind,
+      width,
+      points,
+      sprayPositions,
+    });
   }
 
   /* 风回峰瀑布 ------------------------------------------------------ */
@@ -283,13 +297,13 @@ export function createWater(scene) {
       clock += delta;
     }
     timeUniform.value = clock;
-    for (const spray of sprays) spray.rotation.y = clock * 0.05;
   }
 
   return {
     group,
     waterfalls,
     streams,
+    ponds,
     update,
     setEnabled(value) {
       group.visible = Boolean(value);

@@ -11,6 +11,23 @@ import { createCloudNoise3D } from "../utils/textures.js";
  * 结果先渲染到半分辨率目标，再双线性合成回场景颜色。
  */
 
+/**
+ * 山腰云带参数。密度以主云海峰值（1.0）为基准：0.015 表示 1.5%。
+ * 高度层覆盖六峰峰顶区间，因此靠低密度只擦过崖壁，不形成覆盖。
+ */
+export const CLOUD_BAND = {
+  center: 1310,
+  sigma: 120,
+  peak: 0.015,
+};
+
+export function bandDensity(y) {
+  return (
+    CLOUD_BAND.peak *
+    Math.exp(-Math.pow((y - CLOUD_BAND.center) / CLOUD_BAND.sigma, 2))
+  );
+}
+
 const MARCH_VERTEX = /* glsl */ `
   in vec3 position;
   in vec2 uv;
@@ -57,7 +74,7 @@ const MARCH_FRAGMENT = /* glsl */ `
 
   float heightDensity(float y) {
     float main = exp(-pow((y - 900.0) / 105.0, 2.0));
-    float band = 0.05 * exp(-pow((y - 1310.0) / 120.0, 2.0));
+    float band = ${CLOUD_BAND.peak.toFixed(3)} * exp(-pow((y - ${CLOUD_BAND.center.toFixed(1)}) / ${CLOUD_BAND.sigma.toFixed(1)}, 2.0));
     return main + band;
   }
 

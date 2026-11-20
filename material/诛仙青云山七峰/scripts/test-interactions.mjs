@@ -8,6 +8,7 @@
 
 import process from "node:process";
 import { chromium } from "playwright-core";
+import { CAMERA_VIEWS } from "../src/config.js";
 
 function readArgs(argv) {
   const args = {};
@@ -62,26 +63,15 @@ for (const name of viewNames) {
     timeout: 30000,
   });
   await page.waitForTimeout(400);
-  const distance = await page.evaluate((viewName) => {
-    const { camera, controls } = window.__qingyun;
-    const target = window.__qingyun.world ? null : null;
-    void target;
-    const expected = {
-      overview: [0, 1000, 0],
-      tongtian: [0, 1790, 0],
-      longshou: [-200, 1500, -2900],
-      luoxia: [-2350, 1280, -1750],
-      fenghui: [-3250, 1450, 250],
-      dazhu: [-2000, 1150, 2600],
-      xiaozhu: [1700, 1320, 2900],
-      chaoyang: [3100, 1450, -250],
-    }[viewName];
+  const expected = CAMERA_VIEWS[name].target;
+  const distance = await page.evaluate((target) => {
+    const { controls } = window.__qingyun;
     return Math.hypot(
-      controls.target.x - expected[0],
-      controls.target.y - expected[1],
-      controls.target.z - expected[2],
+      controls.target.x - target[0],
+      controls.target.y - target[1],
+      controls.target.z - target[2],
     );
-  }, name);
+  }, expected);
   if (distance > 40) throw new Error(`${name}: camera target off by ${distance}`);
 }
 
@@ -90,10 +80,14 @@ await page.waitForFunction(() => !window.__qingyun.flight.active, null, {
   timeout: 30000,
 });
 await page.waitForTimeout(400);
-const overviewDistance = await page.evaluate(() => {
+const overviewDistance = await page.evaluate((target) => {
   const { controls } = window.__qingyun;
-  return Math.hypot(controls.target.x, controls.target.y - 1000, controls.target.z);
-});
+  return Math.hypot(
+    controls.target.x - target[0],
+    controls.target.y - target[1],
+    controls.target.z - target[2],
+  );
+}, CAMERA_VIEWS.overview.target);
 if (overviewDistance > 40) {
   throw new Error(`overview reset off by ${overviewDistance}`);
 }
@@ -116,19 +110,19 @@ const clampOk = await page.evaluate(({ x, z }) => {
 if (!clampOk) throw new Error("camera sunk through terrain");
 
 // 阴影焦点：切换两次焦点，光源 target 必须跟随，且不应每帧自动重建。
-const shadowOk = await page.evaluate(() => {
+const shadowOk = await page.evaluate(({ a, b }) => {
   const { world, renderer, THREE } = window.__qingyun;
-  world.setShadowFocus(new THREE.Vector3(-2000, 1170, 2600), 1200);
-  const a = world.sky.sunLight.target.position.clone();
-  world.setShadowFocus(new THREE.Vector3(1700, 1330, 2900), 1200);
-  const b = world.sky.sunLight.target.position.clone();
+  world.setShadowFocus(new THREE.Vector3(...a), 1200);
+  const first = world.sky.sunLight.target.position.clone();
+  world.setShadowFocus(new THREE.Vector3(...b), 1200);
+  const second = world.sky.sunLight.target.position.clone();
   return (
     renderer.shadowMap.autoUpdate === false &&
-    a.distanceTo(new THREE.Vector3(-2000, 1170, 2600)) < 1 &&
-    b.distanceTo(new THREE.Vector3(1700, 1330, 2900)) < 1 &&
+    first.distanceTo(new THREE.Vector3(...a)) < 1 &&
+    second.distanceTo(new THREE.Vector3(...b)) < 1 &&
     world.sky.sunLight.shadow.needsUpdate === true
   );
-});
+}, { a: CAMERA_VIEWS.fenghui.target, b: CAMERA_VIEWS.xiaozhu.target });
 if (!shadowOk) throw new Error("shadow focus did not follow");
 
 // 飞行途中也必须贴地：从龙首飞到小竹，逐帧采样离地高度。

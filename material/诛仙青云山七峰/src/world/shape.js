@@ -37,8 +37,8 @@ const PEAK_DATA = PEAKS.map((peak, index) => {
 // 低矮连接山脊：让部分主峰之间通过露出云海的次级山脉相连，
 // 而不是每座峰都孤立地立在谷地里。crest 为绝对高度，明显低于两侧主峰。
 const RIDGE_LINKS = [
-  { a: "longshou", b: "chaoyang", crest: 1140, spread: 650, seed: 311 },
-  { a: "fenghui", b: "luoxia", crest: 1120, spread: 680, seed: 317 },
+  { a: "longshou", b: "chaoyang", crest: 1180, spread: 650, seed: 311 },
+  { a: "fenghui", b: "luoxia", crest: 1160, spread: 680, seed: 317 },
 ];
 
 const RIDGE_DATA = RIDGE_LINKS.map((link) => ({
@@ -76,7 +76,8 @@ function ridgeBodyAt(x, z) {
   return Math.max(0, body);
 }
 
-function peakLocal(peak, x, z) {  const dx = x - peak.x;
+function peakLocal(peak, x, z) {
+  const dx = x - peak.x;
   const dz = z - peak.z;
   const lx = (dx * peak.cos + dz * peak.sin) / peak.stretch;
   const lz = -dx * peak.sin + dz * peak.cos;

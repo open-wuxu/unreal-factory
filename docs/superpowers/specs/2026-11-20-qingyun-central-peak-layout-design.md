@@ -1,7 +1,7 @@
 # 诛仙 · 青云七峰 —— 中央主峰构图重构设计
 
 日期：2026-11-20
-状态：待确认
+状态：已实现（2026-11-20）
 目标目录：`material/诛仙青云山七峰/`
 配套提示词：`prompt/诛仙青云山七峰.md`
 前置设计：`docs/superpowers/specs/2026-11-18-qingyun-seven-peaks-design.md`

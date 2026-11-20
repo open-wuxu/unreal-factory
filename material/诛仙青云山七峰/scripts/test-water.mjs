@@ -15,6 +15,38 @@ assert.ok(
   `main drop ${main.start.y} -> ${main.end.y}`,
 );
 
+for (const fall of water.waterfalls) {
+  for (let i = 0; i < fall.points.length; i++) {
+    const point = fall.points[i];
+    assert.ok(
+      point.y >= heightAt(point.x, point.z) + 1,
+      `${fall.kind} ribbon underground at ${i}`,
+    );
+    if (i > 0) {
+      assert.ok(
+        point.y <= fall.points[i - 1].y + 0.01,
+        `${fall.kind} ribbon rises at ${i}`,
+      );
+    }
+  }
+  for (let i = 0; i < fall.sprayPositions.length; i += 3) {
+    const dx = fall.sprayPositions[i] - fall.end.x;
+    const dy = fall.sprayPositions[i + 1] - fall.end.y;
+    const dz = fall.sprayPositions[i + 2] - fall.end.z;
+    assert.ok(
+      Math.hypot(dx, dy, dz) < fall.width * 2.5,
+      `${fall.kind} spray detached`,
+    );
+  }
+}
+
+for (const pond of water.ponds) {
+  assert.ok(
+    Math.abs(pond.y - heightAt(pond.x, pond.z)) < 1.5,
+    `${pond.kind} pond not grounded`,
+  );
+}
+
 const tributary = water.waterfalls.find((item) => item.kind === "tributary");
 assert.ok(tributary, "dazhu tributary waterfall missing");
 const drop = tributary.start.y - tributary.end.y;
