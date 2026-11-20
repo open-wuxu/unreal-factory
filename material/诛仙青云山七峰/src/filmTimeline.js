@@ -19,9 +19,9 @@ export const FILM_SHOTS = [
     end: 8,
     subtitle: "云海初开，七峰浮青",
     keys: [
-      { t: 0, position: V(6800, 3000, 8200), target: V(0, 1000, 0) },
-      { t: 4, position: V(5200, 2400, 6200), target: V(0, 1020, 0) },
-      { t: 8, position: V(3800, 1900, 4300), target: V(-200, 1080, -500) },
+      { t: 0, position: V(6200, 3100, -6800), target: V(0, 1050, 0) },
+      { t: 4, position: V(4600, 2500, -5200), target: V(0, 1080, 0) },
+      { t: 8, position: V(2600, 1900, -3600), target: V(0, 1150, 0) },
     ],
   },
   {
@@ -42,9 +42,9 @@ export const FILM_SHOTS = [
     end: 22,
     subtitle: "竹影摇风，双峰对望",
     keys: [
-      { t: 15, position: V(-2400, 1350, 3000), target: V(-2050, 1200, 2600) },
-      { t: 18, position: V(-1500, 1420, 3200), target: V(-800, 1300, 3000) },
-      { t: 22, position: V(600, 1500, 3200), target: V(1700, 1350, 2900) },
+      { t: 15, position: V(-3200, 1420, -1000), target: V(-2600, 1220, -1800) },
+      { t: 18, position: V(-2500, 1520, -700), target: V(-800, 1350, 300) },
+      { t: 22, position: V(-900, 1850, 500), target: V(1900, 1400, 3000) },
     ],
   },
   {
@@ -55,7 +55,7 @@ export const FILM_SHOTS = [
     keys: [
       { t: 22, position: V(-2700, 1200, 700), target: V(-3070, 1180, 450) },
       { t: 25, position: V(-2760, 1240, 710), target: V(-3070, 1200, 450) },
-      { t: 29, position: V(-2200, 1950, 700), target: V(-250, 1520, -2800) },
+      { t: 29, position: V(-1200, 2050, 100), target: V(1450, 1450, -2500) },
     ],
   },
   {
@@ -64,10 +64,10 @@ export const FILM_SHOTS = [
     end: 36,
     subtitle: "落霞满袖，青云不老",
     keys: [
-      { t: 29, position: V(-1500, 1700, -1000), target: V(-2350, 1300, -1750) },
-      { t: 31, position: V(-1750, 1630, -1180), target: V(-2350, 1300, -1750) },
-      { t: 32.5, position: V(-2150, 1850, -1400), target: V(-2350, 1300, -1750) },
-      { t: 36, position: V(-6000, 3200, -4400), target: V(0, 1000, 0) },
+      { t: 29, position: V(-1200, 1750, 1100), target: V(-2500, 1300, 2500) },
+      { t: 31, position: V(-1450, 1680, 1300), target: V(-2500, 1300, 2500) },
+      { t: 32.5, position: V(-1800, 1800, 1600), target: V(-2500, 1300, 2500) },
+      { t: 36, position: V(-6200, 3200, -4000), target: V(0, 1000, 0) },
     ],
   },
 ];
