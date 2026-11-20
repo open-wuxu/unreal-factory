@@ -8,9 +8,9 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const FLOCKS = [
   { center: [0, 1930, 0], radius: 360, altitude: 1930, speed: 0.09, phase: 0.4 },
-  { center: [-2350, 1430, -1750], radius: 240, altitude: 1440, speed: 0.13, phase: 2.1 },
-  { center: [1700, 1460, 2900], radius: 210, altitude: 1470, speed: 0.12, phase: 3.6 },
-  { center: [-2000, 1330, 2600], radius: 270, altitude: 1330, speed: 0.1, phase: 5.2 },
+  { center: [-2500, 1440, 2500], radius: 240, altitude: 1440, speed: 0.13, phase: 2.1 },
+  { center: [1900, 1470, 3000], radius: 210, altitude: 1470, speed: 0.12, phase: 3.6 },
+  { center: [-2600, 1330, -1800], radius: 270, altitude: 1330, speed: 0.1, phase: 5.2 },
 ];
 
 function craneGeometry() {

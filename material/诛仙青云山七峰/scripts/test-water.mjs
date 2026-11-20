@@ -53,6 +53,11 @@ assert.ok(mist.group.children.length >= 3, "not enough mist sheets");
 const birds = createBirds(scene);
 assert.ok(birds.flocks.length >= 3, "not enough bird flocks");
 for (const flock of birds.flocks) {
+  const [cx, , cz] = flock.definition.center;
+  assert.ok(
+    PEAKS.some((peak) => Math.hypot(cx - peak.x, cz - peak.z) < 400),
+    `flock at ${cx},${cz} not anchored to a peak`,
+  );
   for (const sample of flock.samples) {
     assert.ok(
       sample.y > heightAt(sample.x, sample.z) + 120,
