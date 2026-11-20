@@ -1,18 +1,32 @@
 # 诛仙 · 青云山七峰 — 交付报告
 
-日期：2026-11-18
+日期：2026-11-20
+
+## 中央主峰重构（2026-11-20）
+
+按「中央主峰统领群山（方案 A）」重构：
+
+- 七峰重排：通天峰 (0, 0) 居中；龙首（东北）、大竹（西北）、风回（正西）、落霞（西南）、
+  小竹（东南）、朝阳（正东）环绕；六峰高度为通天峰的 65%–78%。
+- `heightAt` 新增龙首—朝阳、风回—落霞两条低矮连接山脊（crest 1140 / 1120 m）。
+- 五镜头机位全部重设：镜一改为东北高空逆光全景；镜三从大竹竹海越通天峰西北山肩
+  隔峰远眺小竹；镜四转向东北龙首脊线；镜五拉远至通天峰居中的全景。
+- 山腰云带 1320 m / 7% → 1310 m / 5%，`uBandTop` 1460 m。
+- 风回瀑布落点外移（落差约 340 m）；新增大竹峰北坡支瀑（落差约 170 m）；
+  山泉与仙鹤群跟随新峰位。
+- 成片配乐改用 HeyGen 曲库曲目（见「资源与许可」）。
 
 ## 交付物
 
 | 文件 | 规格 |
 | --- | --- |
-| `deliverables/qingyun-seven-peaks-2k60.mp4` | 2560×1440 / 60 fps / 36.000 s / 2160 帧 / H.264 High / AAC 192 kbps / 67.0 Mbps / 287.4 MiB / −18.0 LUFS（TP −10.3 dBTP，LRA 3.2） |
-| `deliverables/qingyun-seven-peaks-2k60-silent.mp4` | 同上，无音轨，286.5 MiB，供重新配乐 |
-| `deliverables/qingyun-score.wav` | 48 kHz / 立体声 / 36.0 s / loudnorm 目标 −18 LUFS |
-| `deliverables/previews/01–07-*.png` | 七张 2560×1440 关键镜头截图 |
+| `deliverables/qingyun-seven-peaks-2k60.mp4` | 2560×1440 / 60 fps / 36.000 s / 2160 帧 / H.264 High / AAC 192 kbps / 74.3 Mbps / 318.8 MiB / −18.8 LUFS（TP −2.0 dBTP，LRA 4.7） |
+| `deliverables/qingyun-seven-peaks-2k60-silent.mp4` | 同上，无音轨，317.9 MiB，供重新配乐 |
+| `deliverables/qingyun-heygen-score.wav` | 48 kHz / 立体声 / 36.0 s / −18.8 LUFS / HeyGen 曲库曲目 |
+| `deliverables/previews/01–07-*.png` | 七张 2560×1440 关键镜头截图（04 为 t=16.8 s 竹海） |
 | `deliverables/frames/` | 2160 帧 JPEG 序列 + manifest.json（gitignore，可重新生成） |
 
-本次逐帧捕获耗时 **264 秒**（约 8.2 帧/秒；建筑合并后 draw call 从 3188 级降到 32 个批次），
+本次逐帧捕获耗时 **296 秒**（约 7.3 帧/秒；建筑合并后 draw call 从 3188 级降到 32 个批次），
 编码为 libx264 CRF 16 / preset slow / BT.709 / yuv420p。帧序列可由 `manifest.json` 复核。
 
 ## 渲染与导出
@@ -22,7 +36,7 @@
    （`?film=1&capture=1`，固定 1/60 秒步长，固定随机种子）
 3. `npm run encode:film -- --frames deliverables/frames --out deliverables/qingyun-seven-peaks-2k60-silent.mp4`
    （libx264，CRF 16，preset slow，yuv420p，BT.709）
-4. `python3 scripts/compose-score.py` + `loudnorm I=-18 TP=-2 LRA=9`
+4. HeyGen 曲库配乐：`afade` 裁到 36 s + `loudnorm I=-18 TP=-2 LRA=9`（实测 −18.8 LUFS）
 5. ffmpeg 封装 AAC 音轨，视频流直接复制
 6. `npm run stills:film` 导出关键画面
 
@@ -31,25 +45,26 @@
 | 项 | 数值 |
 | --- | --- |
 | 地形网格 | 4 级同心方环，约 33.6 万顶点 / 66.6 万三角面 |
-| 七峰峰顶 | 1170–1790 m（谷地 420 m） |
-| 云海 | 半分辨率 Ray Marching，48 步，谷地 740–1080 m + 山腰 1320 m（7%） |
+| 七峰峰顶 | 通天峰 1790 m；六峰 1170–1390 m（占通天峰 65%–78%）；谷地 420 m |
+| 云海 | 半分辨率 Ray Marching，48 步，谷地 740–1080 m + 山腰 1310 m（5%） |
 | 竹子 | 大竹峰 12 800 竿、小竹峰 5 600 竿，含两层叶簇实例 |
 | 松 / 秋树 / 草 | 994 / 600 / 3 199 |
 | 建筑 | 共享参数化屋顶、台基、柱列、斗拱、栏杆、石阶、亭塔桥构件 |
 | 阴影 | 单方向光 4096² PCF，`autoUpdate=false`，焦点跟随镜头（±1400 m），影片帧与焦点变化时显式刷新 |
 | 后处理 | 体积云 → Bloom → Grade → OutputPass → SMAA |
 
-本次实际渲染耗时 264 s、成片 287.4 MiB；`deliverables/frames/manifest.json` 记录了
+本次实际渲染耗时 296 s、成片 318.8 MiB；`deliverables/frames/manifest.json` 记录了
 帧数、分辨率与耗时。
 
 ## 验证记录
 
-- `npm test`：高度函数、**地形环缝合与台地平整**、七峰建筑落位与**逐级台阶接地**、植被贴地、瀑布落差、影片时间线全部通过。
+- `npm test`：高度函数、地形环缝合与台地平整、七峰方位/高度比例/连接山脊、机位锚定、
+  建筑落位与逐级台阶接地、植被贴地、瀑布落差与支瀑落点、影片目标与字幕全部通过。
 - `npm run test:interactions`：八个机位、R 重置、窗口 resize、**飞行途中防穿地**、阴影焦点跟随、`shadowMap.autoUpdate === false` 通过。
 - `npm run test:determinism`：同一时刻 `t=12` / `t=24` 从不同 seek 历史重放，截图解码后的像素 MD5 完全一致。
 - `npm run verify:scene -- --resize`：1600×900 → 1280×720 → 2560×1440，云 Pass 半分辨率目标随之缩放，阴影不自动重建，无 WebGL 上下文丢失。
 - `npm run build`：通过（仅有 Three.js 单包体积警告）。
-- 成片：`ffprobe` 确认 2560×1440 / 60 fps / 2160 帧 / 36.000 s / AAC 48 kHz 立体声；`loudnorm` 实测 −18.0 LUFS，真峰 −10.3 dBTP。
+- 成片：`ffprobe` 确认 2560×1440 / 60 fps / 2160 帧 / 36.000 s / AAC 48 kHz 立体声；`loudnorm` 实测 −18.8 LUFS，真峰 −2.0 dBTP。
 
 ## 审查修复
 
@@ -79,5 +94,7 @@
 
 ## 资源与许可
 
-所有几何、贴图、环境贴图、云、水、植被与音频均由源码程序化生成，未使用外部模型、
-图片或采样。Three.js 采用 MIT 许可。
+所有几何、贴图、环境贴图、云、水、植被与场景内声音均由源码程序化生成，未使用外部模型、
+图片或采样。成片配乐为 HeyGen 曲库曲目（`provider: heygen.audio.sounds`，
+track id `89d7b95ce80f49ee9d1ecd27f23f5629`），来源与查询记录在 `.media/manifest.jsonl`；
+源曲以本地缓存复用，不随仓库分发。Three.js 采用 MIT 许可。

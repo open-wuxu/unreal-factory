@@ -6,14 +6,14 @@
 体积云海漫过山谷，风回峰瀑布坠入云中，仙鹤绕峰飞行。场景可自由漫游，也内置一支
 **36 秒、60 fps 的五镜头电影**。
 
-所有几何、贴图、天空、云海、水面、植被、粒子和声音都由代码生成，不依赖任何外部模型、
-图片或音频素材。
+所有几何、贴图、天空、云海、水面、植被与场景内声音（风、云海、瀑布、钟）都由代码生成，
+不依赖外部模型或图片；成片配乐采用 HeyGen 曲库中的授权曲目（见「资源与许可」）。
 
 ![开场](docs/preview.jpg)
 
 ## 成片
 
-- `deliverables/qingyun-seven-peaks-2k60.mp4` — 2560×1440 / 60 fps / 36.0 s / H.264 High + AAC，约 -18 LUFS。
+- `deliverables/qingyun-seven-peaks-2k60.mp4` — 2560×1440 / 60 fps / 36.0 s / H.264 High + AAC，−18.8 LUFS。
 - `deliverables/qingyun-seven-peaks-2k60-silent.mp4` — 无声备份，供重新配乐。
 - `deliverables/previews/` — 七张关键镜头截图（2K PNG）。
 - `deliverables/frames/` — 2160 帧 JPEG 序列（可用 `--resume` 续传）。
@@ -54,7 +54,7 @@ npm test           # 高度函数 / 建筑 / 植被 / 水体 / 影片时间线�
 | --- | --- | --- |
 | 0 – 8 s | 高空全景，七峰自云海浮出 | 云海初开，七峰浮青 |
 | 8 – 15 s | 掠向通天峰，俯瞰主殿群与百级玉阶 | 通天一径，玉阶凌云 |
-| 15 – 22 s | 贴竹海滑行，大竹峰与小竹峰隔着云海对望 | 竹影摇风，双峰对望 |
+| 15 – 22 s | 进入大竹峰竹海，越通天峰西北山肩，隔峰远眺小竹峰 | 竹影摇风，双峰对望 |
 | 22 – 29 s | 仰视风回峰瀑布，镜头升起越过龙首脊线 | 龙首垂瀑，风回千仞 |
 | 29 – 36 s | 落霞峰逆光楼阁，拉远至七峰全景，片名淡出 | 落霞满袖，青云不老 |
 
@@ -62,20 +62,21 @@ npm test           # 高度函数 / 建筑 / 植被 / 水体 / 影片时间线�
 
 ## 场景构成
 
-- **七峰**：通天峰（0, 0，高 1790 m）居中，龙首、落霞、风回、大竹、小竹、朝阳环绕。
-  谷地基准 420 m，七峰共享同一解析高度函数，峰间以鞍部与深谷相连。
+- **七峰**：通天峰（0, 0，高 1790 m）居中，龙首（东北）、大竹（西北）、风回（正西）、
+  落霞（西南）、小竹（东南）、朝阳（正东）环绕；六峰高度为通天峰的 65%–78%。
+  谷地基准 420 m，七峰共享同一解析高度函数，峰间以鞍部、低矮山脊与深谷相连。
 - **地形**：唯一高度函数 `heightAt(x, z)` 驱动四级同心方环网格（近环 15 m、远环 120 m）。
   峰体由各向异性轮廓、角度脊线、域扭曲、中段悬崖带、卫星山脊与冲沟组成；
   峰顶压平成建筑台地，并做峰高标定避免「火山口」。
 - **云海**：半分辨率 Ray Marching 体积云 Pass，读取场景深度做遮挡与软相交。
-  谷地云海 740–1080 m，密度峰 900 m；山腰云带 1320 m（7% 密度）。
+  谷地云海 740–1080 m，密度峰 900 m；山腰云带 1310 m（5% 密度）。
   太阳方向 3 次光照采样 + Henyey-Greenstein 相位，形成受光银边。
 - **建筑**：参数化歇山屋顶（正脊、坡面曲率、四角起翘）、须弥座、柱列、斗拱、窗棂、
   栏杆、石阶、牌坊、亭、塔与桥。通天峰为 86×46 m 重檐主殿 + 配殿 + 后殿 + 玉阶。
 - **植被**：大竹峰 12 800 竿、小竹峰 5 600 竿竹；约 1000 棵松；600 棵秋树（落霞峰）；
   3 200 簇草。竹竿与两层叶簇用 InstancedMesh，顶点着色器风摆。
-- **水体**：风回峰瀑布（落差约 480 m）用滚动噪声水带 + 水雾粒子；大小竹峰山泉沿地形流下；
-  瀑布下有小水潭与 `Reflector` 平面反射。
+- **水体**：风回峰瀑布（落差约 340 m）与大竹峰北坡支瀑（落差约 170 m）用滚动噪声水带
+  + 水雾粒子；大小竹峰山泉沿地形流下；瀑布下有小水潭与 `Reflector` 平面反射。
 - **生灵**：四群仙鹤绕峰飞行，翅膀按绝对时间扇动。
 - **光照**：黄金时刻向日落推进，太阳高度 22°→7°，色温由琥珀转向玫红；
   阴影相机跟随当前镜头焦点。
@@ -125,7 +126,7 @@ scripts/
   export-film.mjs    逐帧导出 JPEG 序列
   encode-film.mjs    编码 2K / 60fps H.264
   capture-stills.mjs 关键镜头截图
-  compose-score.py   36 秒程序化配乐
+  compose-score.py   36 秒程序化配乐（备用；成片现用 HeyGen 曲库）
 ```
 
 调试入口：`window.__qingyun` 暴露 `renderer / scene / camera / controls / composer /
@@ -150,15 +151,15 @@ npm run export:film -- --url http://127.0.0.1:5199/ --frames deliverables/frames
 npm run encode:film -- --frames deliverables/frames \
   --out deliverables/qingyun-seven-peaks-2k60-silent.mp4
 
-# 3. 合成 36 秒配乐
-python3 scripts/compose-score.py
-ffmpeg -y -i deliverables/qingyun-score-raw.wav \
-  -af "loudnorm=I=-18:TP=-2:LRA=9" -ar 48000 -ac 2 \
-  deliverables/qingyun-score.wav
+# 3. HeyGen 曲库配乐：裁到 36 s，淡入淡出并做响度母带
+#    源曲缓存于 .media/audio/bgm/heygen-bgm-001.wav（45 s，不入库）
+ffmpeg -y -i .media/audio/bgm/heygen-bgm-001.wav -t 36 \
+  -af "afade=t=in:st=0:d=0.6,afade=t=out:st=34.4:d=1.6,loudnorm=I=-18:TP=-2:LRA=9" \
+  -ar 48000 -ac 2 deliverables/qingyun-heygen-score.wav
 
 # 4. 封装音轨（视频流直接复制）
 ffmpeg -y -i deliverables/qingyun-seven-peaks-2k60-silent.mp4 \
-  -i deliverables/qingyun-score.wav \
+  -i deliverables/qingyun-heygen-score.wav \
   -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -ar 48000 -ac 2 \
   -shortest -movflags +faststart deliverables/qingyun-seven-peaks-2k60.mp4
 
@@ -171,7 +172,10 @@ npm run stills:film -- --url http://127.0.0.1:5199/ --out deliverables/previews
 
 ## 资源与许可
 
-- 所有几何、贴图、环境贴图、天空、云海、水面、粒子与声音均由本项目源码生成。
-- 未使用任何外部 GLB / glTF 模型、图片、字体文件或音频采样。
+- 所有几何、贴图、环境贴图、天空、云海、水面、粒子与场景内声音均由本项目源码生成。
+- 成片配乐为 HeyGen 曲库曲目（`provider: heygen.audio.sounds`，track id
+  `89d7b95ce80f49ee9d1ecd27f23f5629`），授权信息记录在 `.media/manifest.jsonl`；
+  源曲以本地缓存形式复用，不随仓库分发。
+- 未使用任何外部 GLB / glTF 模型、图片或字体文件。
 - 中文排版使用系统衬线字体（Songti SC / STSong / SimSun / Noto Serif CJK SC）。
 - Three.js 采用 MIT 许可；本项目代码可直接用于学习与二次创作。
