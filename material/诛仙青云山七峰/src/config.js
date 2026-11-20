@@ -11,8 +11,8 @@ export const WORLD = {
   valleyBase: 420,
   cloudBase: 740,
   cloudTop: 1080,
-  bandBase: 1150,
-  bandTop: 1500,
+  bandBase: 1120,
+  bandTop: 1460,
   far: 19200,
 };
 

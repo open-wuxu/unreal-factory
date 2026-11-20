@@ -57,7 +57,7 @@ const MARCH_FRAGMENT = /* glsl */ `
 
   float heightDensity(float y) {
     float main = exp(-pow((y - 900.0) / 105.0, 2.0));
-    float band = 0.07 * exp(-pow((y - 1320.0) / 150.0, 2.0));
+    float band = 0.05 * exp(-pow((y - 1310.0) / 120.0, 2.0));
     return main + band;
   }
 
@@ -280,7 +280,7 @@ export function createClouds({ renderer, camera }) {
     uDensity: { value: 0.6 },
     uSteps: { value: 48 },
     uCloudBase: { value: 730 },
-    uBandTop: { value: 1500 },
+    uBandTop: { value: 1460 },
   };
 
   const pass = new CloudPass(camera, uniforms, noiseTexture);
