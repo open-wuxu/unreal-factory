@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>一树鎏金 · 秋日银杏</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23120e0a'/%3E%3Cpath d='M32 54 L32 34' stroke='%236b5334' stroke-width='3'/%3E%3Cpath d='M32 36 C14 30 10 16 20 10 C24 18 28 24 32 28 C36 24 40 18 44 10 C54 16 50 30 32 36 Z' fill='%23e8b84b'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <header class="hud hud--top">
+      <div class="brand">
+        <span class="brand__seal">银杏</span>
+        <div class="brand__text">
+          <h1>一树鎏金</h1>
+          <p>秋意正浓 · 三维银杏</p>
+        </div>
+      </div>
+
+      <nav class="views" aria-label="展示机位">
+        <button type="button" data-view="overview" class="is-active">整体</button>
+        <button type="button" data-view="up">仰视</button>
+        <button type="button" data-view="crown">树冠</button>
+        <button type="button" data-view="leaf">叶片</button>
+        <button type="button" data-view="trunk">树干</button>
+        <a class="watch" href="?film=1">观看影片</a>
+      </nav>
+    </header>
+
+    <footer class="hud hud--bottom">
+      <div class="transport">
+        <button type="button" class="transport__play" data-action="play" aria-label="暂停">❚❚</button>
+        <button type="button" data-action="replay">重播</button>
+        <button type="button" data-action="reset">重置</button>
+        <input
+          class="transport__timeline"
+          type="range"
+          data-time
+          min="0"
+          max="30"
+          step="0.05"
+          value="0"
+          aria-label="演示时间轴"
+        />
+        <span class="transport__time" data-time-label>00:00 / 00:30</span>
+      </div>
+
+      <div class="toggles">
+        <label><input type="checkbox" data-toggle="orbit" /><span>自动环绕</span></label>
+        <label><input type="checkbox" data-toggle="falling" checked /><span>飘落银杏</span></label>
+        <label><input type="checkbox" data-toggle="title" checked /><span>片尾题字</span></label>
+      </div>
+    </footer>
+
+    <section id="film" class="film" aria-hidden="true">
+      <a class="film__back" href="./">返回</a>
+      <div class="film__fade" data-film="fade"></div>
+      <div class="film__flash" data-film="flash"></div>
+      <div class="film__title" data-film="title">
+        <span class="film__rule"></span>
+        <h2>一树鎏金</h2>
+        <p>秋 意 正 浓</p>
+        <span class="film__rule"></span>
+      </div>
+    </section>
+
+    <div id="loading" class="loading">
+      <div class="loading__leaf" aria-hidden="true"></div>
+      <div class="loading__text">正在生长这棵银杏…</div>
+    </div>
+
+    <div id="fallback" class="fallback" hidden>
+      <h1>需要 WebGL 2</h1>
+      <p>请使用支持 WebGL 2 的桌面浏览器打开本页。</p>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

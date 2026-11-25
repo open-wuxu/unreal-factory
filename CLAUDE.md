@@ -13,11 +13,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `material/上海外滩v3.0/` — 真实地理数据版，**源码在 `feat/shanghai-bund-v3` 分支**；
   master 下的同名目录只有本地构建产物，没有源码。详见「上海外滩 v3.0」一节。
 - `material/枫桥夜泊/` — 独立的《枫桥夜泊》三维诗词短片项目，详见后文。
+- `material/一树鎏金·秋日银杏树/` — 独立的程序化秋日银杏树展示与 30 秒短片，详见后文。
 - 代码中出现的 `UnrealBloomPass` 是 three.js 自带的后处理通道，同样与 Unreal Engine 无关。
 
 ## 文档与提示词
 
-- `prompt/*.md` — 各项目的原始需求提示词（`上海外滩v1.0` / `v2.0` / `v3.0`、`枫桥夜泊`）。
+- `prompt/*.md` — 各项目的原始需求提示词（`上海外滩v1.0` / `v2.0` / `v3.0`、`枫桥夜泊`、
+  `一树鎏金·秋日银杏树`）。
   改动场景定位（真实地理比例、镜头安排、交付物）前先对照对应提示词。
 - `docs/superpowers/specs|plans/` — 项目的设计与实施计划。v3.0 的 spec/plan 在
   `feat/shanghai-bund-v3` 分支上；master 里目前只有《诛仙·青云山七峰》的文档
@@ -210,6 +212,42 @@ world / film / audio / flyTo / setView / setDemo`）。影片导出流程：
 `npm run encode:film -- ...`、`npm run stills:film -- ...`、`npm run score`；完整母带与
 封装命令见 `material/枫桥夜泊/deliverables/REPORT.md`。
 `deliverables/` 被根 `.gitignore` 忽略，成片、配乐与帧序列都不入库。
+
+## 一树鎏金 · 秋日银杏树（独立 Three.js 项目）
+
+`material/一树鎏金·秋日银杏树/` 是独立的 Vite + Three.js 项目：一棵程序化生成的成熟
+银杏树、可自由漫游的展示页，以及 30 秒六镜头电影短片。提示词见
+`prompt/一树鎏金·秋日银杏树.md`，细节与导出命令见该目录 `README.md`。
+
+场景基准：树高约 13.8 m、冠幅约 11.6 m，树根位于地面原点，1 世界单位 = 1 米。
+主干与四级分枝由自定义锥形管沿 `CatmullRomCurve3` 生成，合并为单个
+`BufferGeometry`；47,871 片银杏叶用一个 `InstancedMesh` 绘制。树皮、叶片、地面、
+落叶毯、环境贴图全部由 Canvas 与固定种子程序化生成。风动在顶点着色器中按
+`aSway / aPhase` 驱动，飘落叶按绝对时间解析，保证逐帧可重放。
+
+影片时间线是纯函数 `src/filmTimeline.js`：0–5 整体、5–11 环绕、11–16 仰视、
+16–21 叶片微距、21–25 树干、25–30 收尾；机位、FOV、景深与片尾题字均由绝对时间推导。
+后期链：`RenderPass → BokehPass → UnrealBloom → Grade → SMAA → OutputPass`。
+调试入口 `window.__yinxing`；`?film=1` 实时播放，`?film=1&capture=1` 下暴露
+`window.__capture.renderAt(t)`，配 `scripts/export-film.mjs` 逐帧导出 1080p60。
+
+渲染注意：
+- **`renderer.shadowMap.autoUpdate` 必须保持 `true`。** 手动关闭后首帧阴影贴图未初始化，
+  所有受光材质会因采样格式不匹配而整批绘制失败（与《枫桥夜泊》同类问题）。
+- 自定义锥形管的三角形绕序必须朝外；绕序反了会看到管体内壁，树干被错误照亮，
+  树皮纹理与阴影都会失真。
+- 树干特写依赖只在 `bark` 镜头启用的摄影机侧 SpotLight；其他镜头保持逆光氛围。
+
+`deliverables/yishu-liujin-1080p60.mp4` 是主交付（1920×1080、60fps、30s、H.264 +
+AAC 48 kHz 立体声），`deliverables/yishu-liujin-1080p60-silent.mp4` 是无声备份，
+`deliverables/previews/` 是七张关键帧。`deliverables/` 整体被根 `.gitignore` 忽略。
+
+配乐来自 HeyGen 曲库，源曲缓存在 `.media/audio/bgm/bgm_001.wav`（`.media/` 被忽略）。
+曲目来源、track id、11–41 s 选段、−1.48 dB 线性母带与 AAC 封装记录见
+`material/一树鎏金·秋日银杏树/docs/heygen-score.md`；重新生成用
+`npm run score:heygen` 与 `npm run mux:score`。网页 `?film=1` 仍为静音预览，
+配乐只存在于成片 MP4。全新的 HeyGen 曲目下载在当前网络会被 HyperFrames 的
+非公网地址策略拦截，本次采用 `media-use --reuse` 复用全局 HeyGen 缓存。
 
 ## 诛仙 · 青云山七峰（独立 Three.js 项目）
 

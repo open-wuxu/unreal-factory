@@ -1,0 +1,6 @@
+node_modules
+dist
+deliverables/frames
+.DS_Store
+.media
+test-results
